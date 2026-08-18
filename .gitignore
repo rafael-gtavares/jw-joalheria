@@ -1,0 +1,11 @@
+# Environment variables
+.env
+.env*.local
+
+# Common ignores
+node_modules
+.DS_Store
+
+# Fotos enviadas pelo admin (não versionar arquivos binários)
+back/uploads/*
+!back/uploads/.gitkeep
