@@ -1,0 +1,16 @@
+import mongoose from "mongoose";
+
+const announcementSchema = new mongoose.Schema(
+  {
+    title: { type: String, required: true },
+    content: { type: String, required: true },
+    image: {
+      url: { type: String, default: "" },
+      publicId: { type: String, default: "" },
+    },
+    featuredHome: { type: Boolean, default: false },
+  },
+  { timestamps: true }
+);
+
+export default mongoose.model("Announcement", announcementSchema);

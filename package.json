@@ -1,0 +1,13 @@
+{
+  "name": "jw-joalheria",
+  "private": true,
+  "version": "1.0.0",
+  "scripts": {
+    "dev": "concurrently -n BACK,FRONT -c blue,magenta \"npm run dev --prefix back\" \"npm run dev --prefix front\"",
+    "install:all": "npm install --prefix back && npm install --prefix front",
+    "seed": "npm run seed --prefix back"
+  },
+  "devDependencies": {
+    "concurrently": "^9.0.1"
+  }
+}
