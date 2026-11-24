@@ -1,34 +1,24 @@
 import React from "react";
 
 export default function Marquee({
-  items = ["JOIAS AUTORAIS", "DESIGN", "MATÉRIA", "IDENTIDADE", "JW"],
+  items = ["JOIAS AUTORAIS", "PRATA 950", "OURO 18K", "FEITO À MÃO", "JW"],
   className = "",
 }) {
   return (
     <div
-      className={`relative w-full overflow-hidden border-y border-gold-500/15 select-none ${className}`}
+      className={`relative w-full overflow-hidden border-y border-line select-none ${className}`}
       aria-hidden="true"
     >
-      <div
-        className="
-          relative mx-auto max-w-5xl overflow-hidden
-          [mask-image:linear-gradient(to_right,transparent,black_8%,black_92%,transparent)]
-          [-webkit-mask-image:linear-gradient(to_right,transparent,black_8%,black_92%,transparent)]
-        "
-      >
-        <div className="flex w-max animate-marquee">
-          {[...items, ...items].map((item, index) => (
-            <React.Fragment key={index}>
-              <span className="shrink-0 px-3 py-4 text-xs uppercase tracking-[0.35em] text-cream/50 md:px-5 md:text-sm">
-                {item}
-              </span>
-
-              <span className="shrink-0 py-4 text-xs text-gold-500/50">
-                ·
-              </span>
-            </React.Fragment>
-          ))}
-        </div>
+      <div className="flex w-max animate-marquee">
+        {[...items, ...items, ...items, ...items].map((item, index) => (
+          <span
+            key={index}
+            className="shrink-0 px-8 py-5 text-[11px] uppercase tracking-[0.4em] text-stone"
+          >
+            {item}
+            <span className="ml-16 text-brass">·</span>
+          </span>
+        ))}
       </div>
     </div>
   );

@@ -19,7 +19,7 @@ function describe(order, variant) {
   if (payment === "approved") {
     return {
       icon: CheckCircle2,
-      tone: "text-green-300",
+      tone: "text-green-800",
       title: "Pagamento aprovado!",
       text: "Recebemos seu pagamento. Sua peça entra em produção e você acompanha o andamento em Meus pedidos.",
     };
@@ -29,7 +29,7 @@ function describe(order, variant) {
     // antes de o webhook chegar; nesse caso seguimos aguardando.
     return {
       icon: Clock,
-      tone: "text-gold-300",
+      tone: "text-ink",
       title: variant === "sucesso" ? "Confirmando seu pagamento..." : "Pagamento pendente",
       text:
         variant === "sucesso"
@@ -39,7 +39,7 @@ function describe(order, variant) {
   }
   return {
     icon: XCircle,
-    tone: "text-red-300",
+    tone: "text-red-800",
     title: "Pagamento não concluído",
     text: "O pagamento não foi aprovado. Seu pedido segue reservado por um tempo limitado: você pode tentar novamente.",
   };
@@ -104,21 +104,21 @@ export default function PaymentReturn({ variant }) {
   const canRetry = order && order.status === "pendente" && order.checkoutUrl && view?.icon === XCircle;
 
   return (
-    <div className="min-h-screen bg-forest-950 px-6 py-16">
-      <div className="max-w-lg mx-auto bg-forest-900 border border-gold-500/20 rounded-lg p-8 text-center">
-        {loading && <Loader2 size={28} className="animate-spin text-gold-400 mx-auto" />}
+    <div className="min-h-[70vh] bg-paper px-5 py-14 md:py-20">
+      <div className="max-w-lg mx-auto bg-white border border-line p-8 text-center">
+        {loading && <Loader2 size={28} className="animate-spin text-ink mx-auto" />}
 
         {!loading && !orderId && (
           <>
-            <h1 className="font-display text-2xl text-cream mb-2">Pedido não identificado</h1>
-            <p className="text-cream/60 text-sm">
+            <h1 className="heading !text-3xl md:!text-4xl mb-2">Pedido não identificado</h1>
+            <p className="text-stone text-sm">
               Não encontramos o pedido desta página. Consulte seus pedidos em Meus pedidos.
             </p>
           </>
         )}
 
         {!loading && error && (
-          <p className="bg-red-500/10 border border-red-500/30 text-red-300 text-sm rounded px-3 py-2">
+          <p className="field-error">
             {error}
           </p>
         )}
@@ -126,17 +126,17 @@ export default function PaymentReturn({ variant }) {
         {view && (
           <>
             <Icon size={44} className={`${view.tone} mx-auto mb-4`} />
-            <h1 className="font-display text-2xl text-cream mb-2">{view.title}</h1>
-            <p className="text-cream/60 text-sm mb-6">{view.text}</p>
+            <h1 className="heading !text-3xl md:!text-4xl mb-2">{view.title}</h1>
+            <p className="text-stone text-sm mb-6">{view.text}</p>
 
-            <div className="text-left text-sm text-cream/70 border-t border-gold-500/10 pt-4 space-y-1">
+            <div className="text-left text-sm text-ink/80 border-t border-line pt-4 space-y-1">
               <div className="flex justify-between">
                 <span>Pedido</span>
-                <span className="text-cream/50">#{String(order._id).slice(-6).toUpperCase()}</span>
+                <span className="text-stone">#{String(order._id).slice(-6).toUpperCase()}</span>
               </div>
               <div className="flex justify-between">
                 <span>Total</span>
-                <span className="text-gold-300">{formatCurrency(order.total)}</span>
+                <span className="text-ink">{formatCurrency(order.total)}</span>
               </div>
               {order.shipping?.serviceName && (
                 <div className="flex justify-between">
@@ -152,18 +152,18 @@ export default function PaymentReturn({ variant }) {
           {canRetry && (
             <a
               href={order.checkoutUrl}
-              className="bg-gold-500 hover:bg-gold-400 text-forest-950 font-medium py-2.5 rounded-full transition-colors"
+              className="btn"
             >
               Tentar pagar novamente
             </a>
           )}
           <Link
             to={order ? `/pedidos/${order._id}` : "/pedidos"}
-            className="border border-gold-500/30 hover:border-gold-400 text-cream py-2.5 rounded-full transition-colors"
+            className="btn-ghost"
           >
             Acompanhar pedido
           </Link>
-          <Link to="/joias" className="text-cream/50 hover:text-cream/80 text-xs transition-colors">
+          <Link to="/joias" className="text-stone hover:text-ink/80 text-xs transition-colors">
             Continuar comprando
           </Link>
         </div>

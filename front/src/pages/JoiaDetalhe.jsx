@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
-import { ShoppingBag, Minus, Plus } from "lucide-react";
+import { Minus, Plus } from "lucide-react";
 import { productApi } from "../api/productApi";
 import { useCart } from "../contexts/CartContext";
 import { buildProductInterestWhatsappUrl } from "../helpers/whatsapp";
@@ -24,10 +24,10 @@ export default function JoiaDetalhe() {
 
   if (notFound) {
     return (
-      <div className="min-h-screen bg-forest-950 flex items-center justify-center text-cream">
+      <div className="min-h-[60vh] bg-paper flex items-center justify-center text-ink px-6">
         <div className="text-center">
-          <p className="font-display text-2xl mb-4">Peça não encontrada</p>
-          <Link to="/joias" className="text-gold-400 underline">
+          <p className="font-display text-3xl mb-6">Peça não encontrada</p>
+          <Link to="/joias" className="link-line">
             Voltar para as peças
           </Link>
         </div>
@@ -37,7 +37,7 @@ export default function JoiaDetalhe() {
 
   if (!product) {
     return (
-      <div className="min-h-screen bg-forest-950 flex items-center justify-center text-cream/60">
+      <div className="min-h-[60vh] bg-paper flex items-center justify-center text-stone">
         Carregando...
       </div>
     );
@@ -48,91 +48,119 @@ export default function JoiaDetalhe() {
   const outOfStock = product.stock <= 0;
 
   return (
-    <section className="bg-forest-950 min-h-screen pt-16 pb-24">
-      <div className="max-w-5xl mx-auto px-6 grid md:grid-cols-2 gap-12">
-        <div>
-          <div className="aspect-square rounded-lg overflow-hidden bg-forest-900 border border-gold-500/20 flex items-center justify-center">
-            {currentImage ? (
-              <img src={currentImage} alt={product.name} className="w-full h-full object-cover" />
-            ) : (
-              <span className="font-display text-5xl text-gold-500/40">JW</span>
+    <section className="bg-paper pt-8 md:pt-12 pb-28">
+      <div className="max-w-6xl mx-auto px-5 md:px-6">
+        <nav aria-label="Navegação" className="mb-8 text-[11px] uppercase tracking-[0.24em] text-stone">
+          <Link to="/joias" className="hover:text-ink transition-colors">Peças</Link>
+          <span className="mx-3">/</span>
+          <span className="text-ink">{product.name}</span>
+        </nav>
+
+        <div className="grid md:grid-cols-[1.15fr_1fr] gap-10 md:gap-16 items-start">
+          {/* Galeria */}
+          <div className="md:grid md:grid-cols-[72px_1fr] md:gap-4">
+            {images.length > 1 && (
+              <div className="order-2 md:order-1 flex md:flex-col gap-3 mt-3 md:mt-0">
+                {images.map((img, i) => (
+                  <button
+                    key={i}
+                    onClick={() => setActiveImage(i)}
+                    aria-label={`Ver foto ${i + 1}`}
+                    className={`w-16 h-20 md:w-[72px] md:h-[90px] overflow-hidden bg-sand transition-opacity duration-300 border ${
+                      activeImage === i ? "border-ink" : "border-transparent opacity-60 hover:opacity-100"
+                    }`}
+                  >
+                    <img src={getImageUrl(img)} alt="" className="w-full h-full object-cover" />
+                  </button>
+                ))}
+              </div>
             )}
+
+            <div
+              className={`order-1 md:order-2 aspect-[4/5] bg-sand overflow-hidden flex items-center justify-center ${
+                images.length > 1 ? "" : "md:col-span-2"
+              }`}
+            >
+              {currentImage ? (
+                <img
+                  key={currentImage}
+                  src={currentImage}
+                  alt={product.name}
+                  className="w-full h-full object-cover animate-fadeIn"
+                />
+              ) : (
+                <span className="font-display text-6xl text-stone/30">JW</span>
+              )}
+            </div>
           </div>
-          {images.length > 1 && (
-            <div className="flex gap-2 mt-3">
-              {images.map((img, i) => (
+
+          {/* Informações */}
+          <div className="md:sticky md:top-32">
+            <p className="label mb-4">{product.category}</p>
+            <h1 className="font-display text-4xl md:text-5xl leading-[1.1] text-ink mb-5">
+              {product.name}
+            </h1>
+            <p className="text-ink text-xl tracking-wide mb-8">
+              {product.price.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
+            </p>
+
+            <div className="h-px bg-line mb-8" />
+
+            <p className="text-ink/80 leading-relaxed mb-8">{product.description}</p>
+
+            <dl className="text-sm space-y-2 mb-10">
+              <div className="flex gap-4">
+                <dt className="label w-24 pt-0.5">Material</dt>
+                <dd className="text-ink/80">{product.material}</dd>
+              </div>
+              <div className="flex gap-4">
+                <dt className="label w-24 pt-0.5">Estoque</dt>
+                <dd className={outOfStock ? "text-red-800" : "text-ink/80"}>
+                  {outOfStock
+                    ? "Sob encomenda / indisponível no momento"
+                    : `${product.stock} em estoque`}
+                </dd>
+              </div>
+            </dl>
+
+            <div className="flex items-center gap-4 mb-5">
+              <span className="label">Quantidade</span>
+              <div className="flex items-center border border-line">
                 <button
-                  key={i}
-                  onClick={() => setActiveImage(i)}
-                  aria-label={`Ver foto ${i + 1}`}
-                  className={`w-16 h-16 rounded-md overflow-hidden border ${
-                    activeImage === i ? "border-gold-400" : "border-gold-500/20"
-                  }`}
+                  onClick={() => setQuantity((q) => Math.max(1, q - 1))}
+                  aria-label="Diminuir quantidade"
+                  className="w-10 h-10 flex items-center justify-center text-ink hover:bg-sand transition-colors"
                 >
-                  <img src={getImageUrl(img)} alt="" className="w-full h-full object-cover" />
+                  <Minus size={14} strokeWidth={1.5} />
                 </button>
-              ))}
+                <span className="text-ink w-10 text-center text-sm">{quantity}</span>
+                <button
+                  onClick={() => setQuantity((q) => q + 1)}
+                  aria-label="Aumentar quantidade"
+                  className="w-10 h-10 flex items-center justify-center text-ink hover:bg-sand transition-colors"
+                >
+                  <Plus size={14} strokeWidth={1.5} />
+                </button>
+              </div>
             </div>
-          )}
-        </div>
 
-        <div>
-          <p className="uppercase tracking-[0.3em] text-gold-400 text-xs mb-3">{product.category}</p>
-          <h1 className="font-display text-4xl text-cream mb-4">{product.name}</h1>
-          <p className="text-gold-300 text-2xl font-body mb-6">
-            {product.price.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
-          </p>
-          <p className="text-cream/70 font-body leading-relaxed mb-6">{product.description}</p>
-          <p className="text-cream/50 text-sm mb-2">Material: {product.material}</p>
-          <p className={`text-sm mb-8 ${outOfStock ? "text-red-300" : "text-cream/50"}`}>
-            {outOfStock ? "Peça sob encomenda / indisponível no momento" : `${product.stock} em estoque`}
-          </p>
-
-          <div className="flex items-center gap-4 mb-6">
-            <div className="flex items-center gap-3 border border-gold-500/20 rounded-full px-4 py-2">
-              <button
-                onClick={() => setQuantity((q) => Math.max(1, q - 1))}
-                aria-label="Diminuir quantidade"
-                className="text-cream/70 hover:text-gold-400"
-              >
-                <Minus size={14} />
+            <div className="flex flex-col gap-3">
+              <button onClick={() => addItem(product, quantity)} className="btn w-full">
+                Adicionar ao carrinho
               </button>
-              <span className="text-cream w-4 text-center text-sm">{quantity}</span>
-              <button
-                onClick={() => setQuantity((q) => q + 1)}
-                aria-label="Aumentar quantidade"
-                className="text-cream/70 hover:text-gold-400"
+              <a
+                href={buildProductInterestWhatsappUrl(product)}
+                target="_blank"
+                rel="noreferrer"
+                className="btn-ghost w-full"
               >
-                <Plus size={14} />
-              </button>
+                Tirar dúvidas no WhatsApp
+              </a>
             </div>
-          </div>
 
-          <div className="flex flex-col sm:flex-row gap-3">
-            <button
-              onClick={() => addItem(product, quantity)}
-              className="flex items-center justify-center gap-2 bg-gold-500 hover:bg-gold-400 text-forest-950 font-body font-medium px-8 py-3 rounded-full transition-colors"
-            >
-              <ShoppingBag size={16} /> Adicionar ao carrinho
-            </button>
-            <a
-              href={buildProductInterestWhatsappUrl(product)}
-              target="_blank"
-              rel="noreferrer"
-              className="text-center border border-gold-400/50 text-cream hover:bg-cream/5 font-body px-8 py-3 rounded-full transition-colors"
-            >
-              Tirar dúvidas no WhatsApp
-            </a>
-          </div>
-
-          <p className="text-cream/40 text-[11px] mt-6 leading-relaxed">
-            6x sem juros no cartão de crédito · 5% de desconto no Pix. Consultar forma de entrega.
-          </p>
-
-          <div className="mt-8">
-            <Link to="/joias" className="text-gold-400 text-sm underline">
-              ← Voltar para todas as peças
-            </Link>
+            <p className="text-stone text-xs mt-8 leading-relaxed">
+              6x sem juros no cartão de crédito · 5% de desconto no Pix. Frete calculado no carrinho.
+            </p>
           </div>
         </div>
       </div>

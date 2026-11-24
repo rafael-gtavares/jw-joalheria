@@ -55,19 +55,19 @@ export default function OrderDetail() {
   }
 
   return (
-    <div className="min-h-screen bg-forest-950 px-6 py-16">
+    <div className="min-h-[70vh] bg-paper px-5 py-14 md:py-20">
       <div className="max-w-2xl mx-auto">
         <Link
           to="/pedidos"
-          className="inline-flex items-center gap-1 text-cream/50 hover:text-cream text-sm mb-4 transition-colors"
+          className="inline-flex items-center gap-1 text-stone hover:text-ink text-sm mb-4 transition-colors"
         >
           <ArrowLeft size={14} /> Meus pedidos
         </Link>
 
-        {loading && <Loader2 size={24} className="animate-spin text-gold-400 mx-auto mt-10" />}
+        {loading && <Loader2 size={24} className="animate-spin text-ink mx-auto mt-10" />}
 
         {error && (
-          <p className="bg-red-500/10 border border-red-500/30 text-red-300 text-sm rounded px-3 py-2">
+          <p className="field-error">
             {error}
           </p>
         )}
@@ -75,58 +75,58 @@ export default function OrderDetail() {
         {order && (
           <div className="space-y-5">
             <div>
-              <h1 className="font-display text-2xl text-cream">Pedido #{shortOrderId(order._id)}</h1>
-              <p className="text-cream/40 text-sm">Feito em {formatDateTime(order.createdAt)}</p>
-              <p className="text-gold-300 text-xs uppercase tracking-wide mt-1">
+              <h1 className="heading !text-3xl md:!text-4xl">Pedido #{shortOrderId(order._id)}</h1>
+              <p className="text-stone/70 text-sm">Feito em {formatDateTime(order.createdAt)}</p>
+              <p className="text-ink text-xs uppercase tracking-wide mt-1">
                 {customerOrderLabel(order)}
               </p>
             </div>
 
-            <section className="bg-forest-900 border border-gold-500/20 rounded-lg p-6">
-              <h2 className="font-display text-lg text-cream mb-4">Acompanhamento</h2>
+            <section className="bg-white border border-line p-6">
+              <h2 className="font-display text-lg text-ink mb-4">Acompanhamento</h2>
               <OrderTimeline order={order} />
             </section>
 
-            <section className="bg-forest-900 border border-gold-500/20 rounded-lg p-6">
-              <h2 className="font-display text-lg text-cream mb-3">Peças</h2>
-              <ul className="divide-y divide-gold-500/10 text-sm">
+            <section className="bg-white border border-line p-6">
+              <h2 className="font-display text-lg text-ink mb-3">Peças</h2>
+              <ul className="divide-y divide-line text-sm">
                 {order.items.map((item, idx) => (
                   <li key={idx} className="flex justify-between py-2">
-                    <span className="text-cream/80">
+                    <span className="text-ink/80">
                       {item.quantity}x {item.name}
                     </span>
-                    <span className="text-cream/60">{formatCurrency(item.price * item.quantity)}</span>
+                    <span className="text-stone">{formatCurrency(item.price * item.quantity)}</span>
                   </li>
                 ))}
               </ul>
-              <div className="mt-3 pt-3 border-t border-gold-500/10 space-y-1 text-sm">
-                <p className="flex justify-between text-cream/60">
+              <div className="mt-3 pt-3 border-t border-line space-y-1 text-sm">
+                <p className="flex justify-between text-stone">
                   <span>Subtotal</span>
                   <span>{formatCurrency(order.subtotal)}</span>
                 </p>
-                <p className="flex justify-between text-cream/60">
+                <p className="flex justify-between text-stone">
                   <span>Frete{order.shipping?.serviceName ? ` (${order.shipping.serviceName})` : ""}</span>
                   <span>{formatCurrency(order.shippingCost)}</span>
                 </p>
-                <p className="flex justify-between text-cream font-medium">
+                <p className="flex justify-between text-ink font-medium">
                   <span>Total</span>
-                  <span className="text-gold-300">{formatCurrency(order.total)}</span>
+                  <span className="text-ink">{formatCurrency(order.total)}</span>
                 </p>
               </div>
             </section>
 
-            <section className="bg-forest-900 border border-gold-500/20 rounded-lg p-6 text-sm space-y-1">
-              <h2 className="font-display text-lg text-cream mb-2">Pagamento</h2>
-              <p className="text-cream/70">
+            <section className="bg-white border border-line p-6 text-sm space-y-1">
+              <h2 className="font-display text-lg text-ink mb-2">Pagamento</h2>
+              <p className="text-ink/80">
                 Situação:{" "}
-                <span className="text-cream">{PAYMENT_LABELS[order.paymentStatus] || order.paymentStatus}</span>
+                <span className="text-ink">{PAYMENT_LABELS[order.paymentStatus] || order.paymentStatus}</span>
               </p>
-              <p className="text-cream/70">Forma: {order.paymentMethod}</p>
-              {order.paidAt && <p className="text-cream/70">Pago em {formatDateTime(order.paidAt)}</p>}
+              <p className="text-ink/80">Forma: {order.paymentMethod}</p>
+              {order.paidAt && <p className="text-ink/80">Pago em {formatDateTime(order.paidAt)}</p>}
               {order.status === "pendente" && order.checkoutUrl && (
                 <a
                   href={order.checkoutUrl}
-                  className="inline-block mt-3 bg-gold-500 hover:bg-gold-400 text-forest-950 font-medium px-6 py-2 rounded-full transition-colors"
+                  className="btn mt-3"
                 >
                   Concluir pagamento
                 </a>
@@ -135,20 +135,20 @@ export default function OrderDetail() {
                 <button
                   onClick={checkPayment}
                   disabled={checking}
-                  className="block mt-3 text-gold-300 hover:text-gold-400 disabled:opacity-60 text-xs underline"
+                  className="block mt-3 text-ink hover:text-stone disabled:opacity-60 text-xs underline"
                 >
                   {checking ? "Verificando..." : "Já paguei: verificar pagamento"}
                 </button>
               )}
               {order.status === "pendente" && order.expiresAt && (
-                <p className="text-cream/40 text-xs mt-2">
+                <p className="text-stone/70 text-xs mt-2">
                   Reservado até {formatDateTime(order.expiresAt)}. Depois disso o pedido é cancelado.
                 </p>
               )}
             </section>
 
             {order.shipping?.estimatedDeliveryDate && order.status !== "cancelado" && (
-              <p className="text-cream/40 text-xs text-center">
+              <p className="text-stone/70 text-xs text-center">
                 Previsão de entrega: {order.shipping.estimatedDeliveryDate}
               </p>
             )}

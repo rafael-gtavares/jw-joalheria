@@ -25,52 +25,39 @@ export default function AdminLogin() {
   }
 
   return (
-    <div className="min-h-screen bg-forest-950 flex items-center justify-center px-6">
-      <form
-        onSubmit={handleSubmit}
-        className="bg-forest-900 border border-gold-500/20 rounded-lg p-8 w-full max-w-sm"
-      >
-        <div className="text-center mb-8">
-          <span className="inline-flex items-center justify-center w-14 h-14 rounded-full border border-gold-400 text-gold-300 font-display text-xl mb-3">
-            JW
-          </span>
-          <h1 className="font-display text-2xl text-cream">Painel Administrativo</h1>
-          <p className="text-cream/50 text-sm mt-1">Acesso restrito</p>
+    <div className="min-h-screen bg-paper flex items-center justify-center px-6">
+      <form onSubmit={handleSubmit} className="w-full max-w-sm">
+        <div className="mb-10 text-center">
+          <img src="/jw-logo.png" alt="JW" className="h-14 w-auto mx-auto mb-6 mix-blend-multiply" />
+          <p className="label mb-3">Acesso restrito</p>
+          <h1 className="heading !text-4xl">Painel administrativo</h1>
         </div>
 
-        {error && (
-          <p className="bg-red-500/10 border border-red-500/30 text-red-300 text-sm rounded px-3 py-2 mb-4">
-            {error}
-          </p>
-        )}
+        {error && <p className="field-error mb-6">{error}</p>}
 
-        <label className="block text-cream/70 text-xs uppercase tracking-wider mb-1">E-mail</label>
+        <label className="block label">E-mail</label>
         <input
           type="email"
           required
           value={email}
           onChange={(e) => setEmail(e.target.value)}
-          className="w-full bg-forest-950 border border-gold-500/20 focus:border-gold-400 outline-none rounded px-4 py-2 text-cream mb-4"
+          className="field mb-6"
         />
 
-        <label className="block text-cream/70 text-xs uppercase tracking-wider mb-1">Senha</label>
+        <label className="block label">Senha</label>
         <input
           type="password"
           required
           value={password}
           onChange={(e) => setPassword(e.target.value)}
-          className="w-full bg-forest-950 border border-gold-500/20 focus:border-gold-400 outline-none rounded px-4 py-2 text-cream mb-6"
+          className="field mb-8"
         />
 
-        <button
-          type="submit"
-          disabled={loading}
-          className="w-full bg-gold-500 hover:bg-gold-400 disabled:opacity-60 text-forest-950 font-body font-medium py-2.5 rounded-full transition-colors"
-        >
+        <button type="submit" disabled={loading} className="btn w-full">
           {loading ? "Entrando..." : "Entrar"}
         </button>
 
-        <p className="text-cream/30 text-[11px] text-center mt-5">
+        <p className="text-stone text-[11px] text-center mt-6 leading-relaxed">
           Acesso via Firebase Authentication. O usuário deve ser criado no
           Console do Firebase.
         </p>

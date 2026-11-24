@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
-import { X, Minus, Plus, Trash2, ShoppingBag, Loader2, Truck, Info } from "lucide-react";
+import { X, Minus, Plus, Loader2, Truck, Info } from "lucide-react";
 import { useCart } from "../../contexts/CartContext";
 import { useAuth } from "../../contexts/AuthContext";
 import { shippingApi } from "../../api/shippingApi";
@@ -111,72 +111,75 @@ export default function CartDrawer() {
       {/* Overlay */}
       <div
         onClick={() => setOpen(false)}
-        className={`fixed inset-0 bg-forest-950/70 backdrop-blur-sm z-50 transition-opacity duration-300 ${open ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
+        className={`fixed inset-0 bg-ink/40 backdrop-blur-[2px] z-50 transition-opacity duration-500 ${open ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
           }`}
         aria-hidden={!open}
       />
 
       {/* Painel */}
       <aside
-        className={`fixed top-0 right-0 h-full w-full sm:w-[420px] bg-forest-900 border-l border-gold-500/20 z-50 flex flex-col transition-transform duration-300 ease-out ${open ? "translate-x-0" : "translate-x-full"
+        className={`fixed top-0 right-0 h-full w-full sm:w-[440px] bg-paper z-50 flex flex-col transition-transform duration-500 ease-out ${open ? "translate-x-0" : "translate-x-full"
           }`}
         role="dialog"
         aria-label="Carrinho de compras"
         aria-hidden={!open}
       >
-        <div className="flex items-center justify-between px-6 py-5 border-b border-gold-500/15">
-          <h2 className="font-display text-xl text-cream flex items-center gap-2">
-            <ShoppingBag size={18} className="text-gold-400" /> Seu carrinho
-          </h2>
+        <div className="flex items-center justify-between px-6 h-[68px] border-b border-line shrink-0">
+          <h2 className="font-display text-2xl text-ink">Seu carrinho</h2>
           <button
             onClick={() => setOpen(false)}
             aria-label="Fechar carrinho"
-            className="text-cream/60 hover:text-cream transition-colors"
+            className="text-ink hover:text-stone transition-colors -mr-2 p-2"
           >
-            <X size={22} />
+            <X size={22} strokeWidth={1.25} />
           </button>
         </div>
 
-        <div className="flex-1 overflow-y-auto px-6 py-5 space-y-5">
+        <div className="flex-1 overflow-y-auto px-6 py-6 space-y-6">
           {items.length === 0 ? (
-            <p className="text-cream/40 text-sm text-center py-16">
-              Seu carrinho está vazio. Explore nossas peças autorais.
+            <p className="text-stone text-center py-20 font-display italic text-2xl">
+              Seu carrinho está vazio.
+              <span className="block not-italic font-body text-sm mt-2">
+                Explore nossas peças autorais.
+              </span>
             </p>
           ) : (
             items.map((item) => (
-              <div key={item.productId} className="flex gap-3">
-                <div className="w-16 h-16 shrink-0 rounded-lg overflow-hidden bg-forest-800 flex items-center justify-center">
+              <div key={item.productId} className="flex gap-4">
+                <div className="w-20 h-24 shrink-0 overflow-hidden bg-sand flex items-center justify-center">
                   {item.image ? (
                     <img src={item.image} alt={item.name} className="w-full h-full object-cover" />
                   ) : (
-                    <span className="font-display text-gold-500/40 text-sm">JW</span>
+                    <span className="font-display text-stone/40 text-sm">JW</span>
                   )}
                 </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-cream text-sm truncate">{item.name}</p>
-                  <p className="text-gold-300 text-sm">{formatCurrency(item.price)}</p>
-                  <div className="flex items-center gap-2 mt-1.5">
-                    <button
-                      onClick={() => updateQuantity(item.productId, item.quantity - 1)}
-                      aria-label="Diminuir quantidade"
-                      className="w-6 h-6 flex items-center justify-center rounded-full border border-gold-500/30 text-cream/70 hover:border-gold-400 transition-colors"
-                    >
-                      <Minus size={12} />
-                    </button>
-                    <span className="text-sm text-cream w-4 text-center">{item.quantity}</span>
-                    <button
-                      onClick={() => updateQuantity(item.productId, item.quantity + 1)}
-                      aria-label="Aumentar quantidade"
-                      className="w-6 h-6 flex items-center justify-center rounded-full border border-gold-500/30 text-cream/70 hover:border-gold-400 transition-colors"
-                    >
-                      <Plus size={12} />
-                    </button>
+                <div className="flex-1 min-w-0 flex flex-col">
+                  <p className="font-display text-lg text-ink leading-snug">{item.name}</p>
+                  <p className="text-stone text-sm">{formatCurrency(item.price)}</p>
+                  <div className="flex items-center gap-3 mt-auto">
+                    <div className="flex items-center border border-line">
+                      <button
+                        onClick={() => updateQuantity(item.productId, item.quantity - 1)}
+                        aria-label="Diminuir quantidade"
+                        className="w-8 h-8 flex items-center justify-center text-ink hover:bg-sand transition-colors"
+                      >
+                        <Minus size={12} strokeWidth={1.5} />
+                      </button>
+                      <span className="text-sm text-ink w-7 text-center">{item.quantity}</span>
+                      <button
+                        onClick={() => updateQuantity(item.productId, item.quantity + 1)}
+                        aria-label="Aumentar quantidade"
+                        className="w-8 h-8 flex items-center justify-center text-ink hover:bg-sand transition-colors"
+                      >
+                        <Plus size={12} strokeWidth={1.5} />
+                      </button>
+                    </div>
                     <button
                       onClick={() => removeItem(item.productId)}
                       aria-label="Remover item"
-                      className="ml-auto text-red-300/80 hover:text-red-300 transition-colors"
+                      className="ml-auto text-[11px] uppercase tracking-[0.2em] text-stone hover:text-ink border-b border-transparent hover:border-ink transition-colors"
                     >
-                      <Trash2 size={14} />
+                      Remover
                     </button>
                   </div>
                 </div>
@@ -186,23 +189,27 @@ export default function CartDrawer() {
         </div>
 
         {items.length > 0 && (
-          <div className="border-t border-gold-500/15 px-6 py-5 space-y-4">
-            <form onSubmit={handleCalculateShipping} className="flex gap-2">
-              <input
-                value={cep}
-                onChange={(e) => setCep(e.target.value)}
-                placeholder="Seu CEP"
-                className="flex-1 bg-forest-950 border border-gold-500/20 focus:border-gold-400 outline-none rounded-full px-4 py-2 text-sm text-cream placeholder:text-cream/40"
-              />
+          <div className="border-t border-line px-6 py-5 space-y-4 overflow-y-auto max-h-[62vh] bg-white">
+            <form onSubmit={handleCalculateShipping} className="flex gap-4 items-end">
+              <label className="flex-1">
+                <span className="label">CEP</span>
+                <input
+                  value={cep}
+                  onChange={(e) => setCep(e.target.value)}
+                  placeholder="00000-000"
+                  inputMode="numeric"
+                  className="field mt-1 text-sm"
+                />
+              </label>
               <button
                 type="submit"
                 disabled={loadingShipping}
-                className="bg-gold-500/15 hover:bg-gold-500/25 text-gold-300 text-xs uppercase tracking-wide px-4 rounded-full transition-colors disabled:opacity-60"
+                className="link-line mb-2 disabled:opacity-60"
               >
                 {loadingShipping ? <Loader2 size={14} className="animate-spin" /> : "Calcular frete"}
               </button>
             </form>
-            {shippingError && <p className="text-red-300 text-xs">{shippingError}</p>}
+            {shippingError && <p className="text-red-800 text-xs">{shippingError}</p>}
             {quote && (
               <div className="space-y-2" role="radiogroup" aria-label="Opções de envio">
                 {quote.options.map((option) => {
@@ -210,10 +217,8 @@ export default function CartDrawer() {
                   return (
                     <label
                       key={option.serviceCode}
-                      className={`flex items-center gap-3 rounded-lg border px-3 py-2 cursor-pointer transition-colors ${
-                        selected
-                          ? "border-gold-400 bg-gold-500/10"
-                          : "border-gold-500/20 hover:border-gold-500/40"
+                      className={`flex items-center gap-3 border px-4 py-3 cursor-pointer transition-colors duration-300 ${
+                        selected ? "border-ink bg-paper" : "border-line hover:border-stone"
                       }`}
                     >
                       <input
@@ -222,31 +227,31 @@ export default function CartDrawer() {
                         value={option.serviceCode}
                         checked={selected}
                         onChange={() => handleSelectOption(option.serviceCode)}
-                        className="accent-gold-400"
+                        className="accent-accent"
                       />
                       <span className="flex-1 min-w-0">
-                        <span className="block text-cream text-sm">{option.serviceName}</span>
-                        <span className="block text-cream/50 text-xs">
+                        <span className="block text-ink text-sm">{option.serviceName}</span>
+                        <span className="block text-stone text-xs">
                           até {option.totalBusinessDays} dias úteis
                         </span>
                       </span>
-                      <span className="text-gold-300 text-sm">{formatCurrency(option.price)}</span>
+                      <span className="text-ink text-sm">{formatCurrency(option.price)}</span>
                     </label>
                   );
                 })}
               </div>
             )}
             {shipping && (
-              <p className="text-cream/50 text-xs flex items-start gap-1.5">
-                <Truck size={13} className="text-gold-400 mt-0.5 shrink-0" />
+              <p className="text-stone text-xs flex items-start gap-1.5 leading-relaxed">
+                <Truck size={13} strokeWidth={1.5} className="text-ink mt-0.5 shrink-0" />
                 <span>
                   Prazo estimado:{" "}
-                  <span className="text-cream/70">
+                  <span className="text-ink/80">
                     {shipping.productionDays} dias úteis de produção +{" "}
                     {shipping.shippingDays} dias úteis de entrega
                   </span>
                   {" "}· Total:{" "}
-                  <span className="text-gold-300">{shipping.totalBusinessDays} dias úteis</span>
+                  <span className="text-ink">{shipping.totalBusinessDays} dias úteis</span>
                   {shipping.estimatedDeliveryDate && (
                     <> (previsão: {shipping.estimatedDeliveryDate})</>
                   )}
@@ -254,22 +259,22 @@ export default function CartDrawer() {
               </p>
             )}
 
-            <div className="space-y-1 text-sm">
-              <div className="flex justify-between text-cream/70">
+            <div className="space-y-1.5 text-sm pt-1">
+              <div className="flex justify-between text-stone">
                 <span>Subtotal</span>
                 <span>{formatCurrency(subtotal)}</span>
               </div>
-              <div className="flex justify-between text-cream/70">
+              <div className="flex justify-between text-stone">
                 <span>Frete</span>
                 <span>{shipping ? formatCurrency(shipping.price) : "a calcular"}</span>
               </div>
-              <div className="flex justify-between text-cream text-base font-medium pt-1 border-t border-gold-500/10">
-                <span>Total</span>
-                <span>{formatCurrency(total)}</span>
+              <div className="flex justify-between items-baseline text-ink pt-3 border-t border-line">
+                <span className="label">Total</span>
+                <span className="font-display text-2xl">{formatCurrency(total)}</span>
               </div>
             </div>
 
-            <p className="text-cream/40 text-[11px] leading-relaxed">
+            <p className="text-stone text-[11px] leading-relaxed">
               6x sem juros no cartão de crédito · 5% de desconto no Pix.
               Consultar forma de entrega.
             </p>
@@ -277,7 +282,7 @@ export default function CartDrawer() {
             <button
               onClick={handleGoToPayment}
               disabled={!shipping || paying}
-              className="w-full bg-gold-500 hover:bg-gold-400 disabled:bg-gold-500/30 disabled:cursor-not-allowed disabled:hover:bg-gold-500/30 text-forest-950 font-medium py-3 rounded-full transition-colors flex items-center justify-center gap-2"
+              className="btn w-full"
             >
               {paying ? (
                 <>
@@ -288,16 +293,16 @@ export default function CartDrawer() {
               )}
             </button>
             {!shipping && (
-              <p className="text-cream/50 text-xs text-center flex items-center justify-center gap-1.5">
+              <p className="text-stone text-xs text-center flex items-center justify-center gap-1.5">
                 <Info size={12} className="shrink-0" />
                 Calcule o frete para continuar.
               </p>
             )}
-            {paymentError && <p className="text-red-300 text-xs text-center">{paymentError}</p>}
+            {paymentError && <p className="text-red-800 text-xs text-center">{paymentError}</p>}
 
             <button
               onClick={clearCart}
-              className="w-full text-cream/40 hover:text-cream/70 text-xs transition-colors"
+              className="w-full text-stone hover:text-ink text-xs transition-colors"
             >
               Esvaziar carrinho
             </button>

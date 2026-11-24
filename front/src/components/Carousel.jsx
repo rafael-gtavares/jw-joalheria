@@ -2,7 +2,7 @@ import React, { useRef, useState, useEffect, Children } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 
 // Carrossel horizontal simples (scroll-snap), sem dependências externas.
-// Usado apenas no mobile — no desktop os depoimentos aparecem em grid (ver Home.jsx).
+// Usado apenas no mobile — no desktop os itens aparecem em grid (ver Home.jsx).
 export default function Carousel({ children, itemClassName = "" }) {
   const trackRef = useRef(null);
   const items = Children.toArray(children);
@@ -55,40 +55,41 @@ export default function Carousel({ children, itemClassName = "" }) {
       </div>
 
       {items.length > 1 && (
-        <>
+        <div className="flex items-center justify-center gap-4 mt-6">
           <button
             type="button"
             onClick={() => scrollToIndex(activeIndex - 1)}
             disabled={activeIndex === 0}
-            className="flex absolute -left-4 top-1/2 -translate-y-1/2 -translate-x-full items-center justify-center w-9 h-9 rounded-full bg-forest-900 text-gold-400 border border-gold-500/30 hover:border-gold-400 disabled:opacity-30 disabled:cursor-not-allowed"
+            className="text-ink disabled:opacity-25 disabled:cursor-not-allowed p-1"
             aria-label="Anterior"
           >
-            <ChevronLeft size={18} />
-          </button>
-          <button
-            type="button"
-            onClick={() => scrollToIndex(activeIndex + 1)}
-            disabled={activeIndex === items.length - 1}
-            className="flex absolute -right-4 top-1/2 -translate-y-1/2 translate-x-full items-center justify-center w-9 h-9 rounded-full bg-forest-900 text-gold-400 border border-gold-500/30 hover:border-gold-400 disabled:opacity-30 disabled:cursor-not-allowed"
-            aria-label="Próximo"
-          >
-            <ChevronRight size={18} />
+            <ChevronLeft size={18} strokeWidth={1.25} />
           </button>
 
-          <div className="flex justify-center gap-1.5 mt-4">
+          <div className="flex gap-2">
             {items.map((_, i) => (
               <button
                 key={i}
                 type="button"
                 onClick={() => scrollToIndex(i)}
-                className={`h-1.5 rounded-full transition-all ${
-                  i === activeIndex ? "w-5 bg-gold-500" : "w-1.5 bg-gold-500/30"
+                className={`h-px transition-all duration-300 ${
+                  i === activeIndex ? "w-8 bg-ink" : "w-4 bg-ink/25"
                 }`}
                 aria-label={`Ir para item ${i + 1}`}
               />
             ))}
           </div>
-        </>
+
+          <button
+            type="button"
+            onClick={() => scrollToIndex(activeIndex + 1)}
+            disabled={activeIndex === items.length - 1}
+            className="text-ink disabled:opacity-25 disabled:cursor-not-allowed p-1"
+            aria-label="Próximo"
+          >
+            <ChevronRight size={18} strokeWidth={1.25} />
+          </button>
+        </div>
       )}
     </div>
   );

@@ -22,8 +22,11 @@ const SORT_OPTIONS = [
 export default function Joias() {
   const [searchParams] = useSearchParams();
   const collection = searchParams.get("collection") || "";
+  const initialCategory = searchParams.get("category");
   const [products, setProducts] = useState([]);
-  const [category, setCategory] = useState("Todas");
+  const [category, setCategory] = useState(
+    CATEGORIES.includes(initialCategory) ? initialCategory : "Todas"
+  );
   const [search, setSearch] = useState("");
   const [priceRange, setPriceRange] = useState(0);
   const [sort, setSort] = useState("recentes");
@@ -60,87 +63,82 @@ export default function Joias() {
   }, [products, priceRange, sort]);
 
   return (
-    <section className="bg-forest-950 min-h-screen pt-16 pb-24">
-      <div className="max-w-6xl mx-auto px-6">
-        <RevealOnScroll className="text-center mb-12">
-          <p className="uppercase tracking-[0.3em] text-gold-400 text-xs mb-3">JW Joalheria Autoral</p>
-          <h1 className="font-display text-4xl md:text-5xl text-cream">Nossas peças</h1>
+    <section className="bg-paper min-h-screen pt-14 md:pt-20 pb-28">
+      <div className="max-w-6xl mx-auto px-5 md:px-6">
+        <RevealOnScroll className="text-center mb-14">
+          <p className="label mb-4">{collection ? `Coleção ${collection}` : "JW Joalheria Autoral"}</p>
+          <h1 className="heading">Nossas peças</h1>
         </RevealOnScroll>
 
-        {/* Categorias + busca */}
-        <div className="flex flex-col md:flex-row gap-4 items-center justify-between mb-6">
-          <div className="flex flex-wrap gap-2 justify-center">
-            {CATEGORIES.map((c) => (
-              <button
-                key={c}
-                onClick={() => setCategory(c)}
-                className={`px-4 py-2 rounded-full text-sm font-body border transition-colors ${
-                  category === c
-                    ? "bg-gold-500 border-gold-500 text-forest-950"
-                    : "border-gold-500/30 text-cream/70 hover:border-gold-400"
-                }`}
-              >
-                {c}
-              </button>
-            ))}
-          </div>
-
-          <input
-            type="text"
-            placeholder="Buscar peça..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="bg-forest-900 border border-gold-500/20 focus:border-gold-400 outline-none rounded-full px-5 py-2 text-cream placeholder:text-cream/40 text-sm w-full md:w-64"
-          />
+        {/* Categorias */}
+        <div className="flex flex-wrap gap-x-8 gap-y-3 justify-center mb-10 border-b border-line pb-6">
+          {CATEGORIES.map((c) => (
+            <button
+              key={c}
+              onClick={() => setCategory(c)}
+              className={`text-[11px] uppercase tracking-[0.24em] pb-1.5 border-b transition-colors duration-300 ${
+                category === c
+                  ? "border-ink text-ink"
+                  : "border-transparent text-stone hover:text-ink"
+              }`}
+            >
+              {c}
+            </button>
+          ))}
         </div>
 
-        {/* Filtros por preço + ordenação */}
-        <div className="flex flex-col lg:flex-row gap-4 lg:items-center justify-between mb-10 border-t border-gold-500/10 pt-6">
-          <div className="flex items-center gap-3 flex-wrap">
-            <span className="text-cream/50 text-xs uppercase tracking-widest mr-1">
-              Preço
-            </span>
-            {PRICE_RANGES.map((r, i) => (
-              <button
-                key={r.label}
-                onClick={() => setPriceRange(i)}
-                className={`px-4 py-1.5 rounded-full text-xs font-body border transition-colors ${
-                  priceRange === i
-                    ? "bg-gold-500 border-gold-500 text-forest-950"
-                    : "border-gold-500/30 text-cream/70 hover:border-gold-400"
-                }`}
-              >
-                {r.label}
-              </button>
-            ))}
-          </div>
+        {/* Busca, preço e ordenação */}
+        <div className="grid gap-6 md:grid-cols-3 mb-12">
+          <label className="block">
+            <span className="label">Buscar</span>
+            <input
+              type="text"
+              placeholder="Nome da peça"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="field mt-1"
+            />
+          </label>
 
-          <div className="flex items-center gap-2">
-            <span className="text-cream/50 text-xs uppercase tracking-widest">
-              Ordenar
-            </span>
+          <label className="block">
+            <span className="label">Preço</span>
+            <select
+              value={priceRange}
+              onChange={(e) => setPriceRange(Number(e.target.value))}
+              className="field mt-1 cursor-pointer"
+            >
+              {PRICE_RANGES.map((r, i) => (
+                <option key={r.label} value={i}>
+                  {r.label}
+                </option>
+              ))}
+            </select>
+          </label>
+
+          <label className="block">
+            <span className="label">Ordenar</span>
             <select
               value={sort}
               onChange={(e) => setSort(e.target.value)}
-              className="bg-forest-900 border border-gold-500/20 focus:border-gold-400 outline-none rounded-full px-4 py-2 text-cream text-sm cursor-pointer"
+              className="field mt-1 cursor-pointer"
             >
               {SORT_OPTIONS.map((o) => (
-                <option key={o.value} value={o.value} className="bg-forest-900">
+                <option key={o.value} value={o.value}>
                   {o.label}
                 </option>
               ))}
             </select>
-          </div>
+          </label>
         </div>
 
         {loading ? (
-          <p className="text-center text-cream/50 py-20 font-body">Carregando peças...</p>
+          <p className="text-center text-stone py-24">Carregando peças...</p>
         ) : visibleProducts.length === 0 ? (
-          <p className="text-center text-cream/50 py-20 font-body">
+          <p className="text-center text-stone py-24">
             Nenhuma peça encontrada com esse filtro.
           </p>
         ) : (
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-4 gap-y-10 md:gap-x-6 md:gap-y-14">
             {visibleProducts.map((p, i) => (
               <RevealOnScroll key={p._id} delay={(i % 4) * 80}>
                 <ProductCard product={p} />

@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { Gem, Hammer, Sparkles, Heart, MapPin, Clock } from "lucide-react";
 import { productApi } from "../api/productApi";
 import { reviewApi } from "../api/reviewApi";
 import { announcementApi } from "../api/announcementApi";
@@ -9,38 +8,44 @@ import RevealOnScroll from "../components/RevealOnScroll";
 import Marquee from "../components/Marquee";
 import Carousel from "../components/Carousel";
 import { WHATSAPP_LINK } from "../helpers/whatsapp";
-import { COLLECTIONS } from "../constants/categories";
+import { COLLECTIONS, CATEGORIES } from "../constants/categories";
 
 // Texto institucional provisório — ajuste com informações reais da marca
 // quando disponíveis. Está isolado aqui para facilitar a substituição futura.
 const DIFERENCIAIS = [
   {
-    icon: Gem,
+    n: "01",
     title: "Design autoral",
     text: "Cada peça nasce de um desenho próprio, sem réplicas — uma identidade que é só da JW.",
   },
   {
-    icon: Hammer,
+    n: "02",
     title: "Feita à mão",
     text: "Produção artesanal, com atenção ao detalhe em cada etapa do processo.",
   },
   {
-    icon: Sparkles,
+    n: "03",
     title: "Materiais nobres",
     text: "Prata 950 e banho de ouro 18k, com pedras como ágata, ametista, madrepérola e quartzo.",
   },
   {
-    icon: Heart,
+    n: "04",
     title: "Feito com intenção",
     text: "Peças pensadas para eternizar momentos, com dedicação e cuidado em cada exemplar.",
   },
 ];
 
+// Imagens provisórias das coleções (substituir pelas fotos finais da marca).
+const COLLECTION_IMAGES = {
+  Origem: "/products/anel-ondas-do-mar.png",
+  Bauhaus: "/products/brinco-argola-autoral.png",
+};
+
 function ReviewCard({ review: r }) {
   return (
-    <div className="bg-cream border border-forest-900/10 rounded-lg overflow-hidden h-full flex flex-col">
+    <div className="h-full flex flex-col">
       {r.image?.url && (
-        <div className="w-full h-64 bg-forest-900/5 flex-shrink-0">
+        <div className="w-full aspect-[4/5] bg-sand overflow-hidden mb-5">
           <img
             src={r.image.url}
             alt={`${r.customerName} usando joia JW`}
@@ -50,32 +55,25 @@ function ReviewCard({ review: r }) {
         </div>
       )}
 
-      <div className="p-6 flex flex-col flex-1">
-        {/* Estrelas */}
-        <div className="text-gold-600 mb-2 text-sm h-5 flex items-center">
-          {"★".repeat(r.rating)}
-          {"☆".repeat(5 - r.rating)}
-        </div>
-
-        {/* Texto */}
-        <p className="text-ink/80 text-sm leading-relaxed mb-4 flex-1">
-          “{r.message}”
-        </p>
-
-        {/* Nome */}
-        <p className="font-display text-forest-900 text-lg mt-auto">
-          {r.customerName}
-        </p>
+      <div className="text-brass mb-3 text-sm tracking-widest">
+        {"★".repeat(r.rating)}
+        <span className="text-line">{"★".repeat(5 - r.rating)}</span>
       </div>
+
+      <p className="font-display italic text-xl leading-snug text-ink mb-4 flex-1">
+        “{r.message}”
+      </p>
+
+      <p className="label">{r.customerName}</p>
     </div>
   );
 }
 
 function AnnouncementCard({ announcement: a }) {
   return (
-    <div className="bg-forest-900 border border-gold-500/20 rounded-2xl overflow-hidden h-full flex flex-col">
+    <div className="h-full flex flex-col bg-white border border-line">
       {a.image?.url && (
-        <div className="w-full aspect-[4/1] bg-forest-950 flex-shrink-0">
+        <div className="w-full aspect-[4/1] bg-sand flex-shrink-0 overflow-hidden">
           <img
             src={a.image.url}
             alt={a.title}
@@ -85,11 +83,20 @@ function AnnouncementCard({ announcement: a }) {
         </div>
       )}
 
-      <div className="p-6 flex flex-col flex-1">
-        <h3 className="font-display text-xl text-cream mb-2">{a.title}</h3>
-        <p className="text-cream/70 text-sm leading-relaxed flex-1">{a.content}</p>
+      <div className="p-7 flex flex-col flex-1">
+        <h3 className="font-display text-2xl text-ink mb-3">{a.title}</h3>
+        <p className="text-stone text-sm leading-relaxed flex-1">{a.content}</p>
       </div>
     </div>
+  );
+}
+
+function SectionTitle({ label, title, className = "" }) {
+  return (
+    <RevealOnScroll className={`text-center mb-14 ${className}`}>
+      <p className="label mb-4">{label}</p>
+      <h2 className="heading">{title}</h2>
+    </RevealOnScroll>
   );
 }
 
@@ -107,65 +114,111 @@ export default function Home() {
   return (
     <>
       {/* HERO */}
-      <section className="relative bg-forest-950 text-cream overflow-hidden">
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_rgba(176,169,150,0.10),_transparent_60%)]" />
-        <div className="relative max-w-4xl mx-auto px-6 pt-32 pb-20 text-center flex flex-col items-center">
-          <span className="flex items-center justify-center w-20 h-20 rounded-full bg-cream/95 mb-6 overflow-hidden">
-            <img src="/jw-logo.png" alt="Logo JW" className="w-14 h-14 object-contain" />
-          </span>
-          <p className="uppercase tracking-[0.35em] text-gold-400 text-xs mb-4">
+      <section className="relative bg-accent text-paper overflow-hidden min-h-[78vh] md:min-h-[86vh] flex items-end">
+        <img
+          src="/products/colar-ponto-de-luz.png"
+          alt=""
+          aria-hidden="true"
+          className="absolute inset-0 w-full h-full object-cover object-[50%_35%]"
+        />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-black/10" />
+
+        <div className="relative w-full max-w-6xl mx-auto px-6 pb-16 md:pb-24">
+          <p className="animate-fadeUp text-[11px] uppercase tracking-[0.4em] text-paper/80 mb-5">
             Janayna Waite · Joalheria Autoral
           </p>
-          <h1 className="font-display text-4xl md:text-6xl leading-tight mb-6">
+          <h1 className="animate-fadeUp [animation-delay:150ms] font-display font-light text-5xl md:text-7xl leading-[1.04] max-w-2xl">
             Joias autorais,
-            <br /> feitas para durar.
+            <br />
+            <span className="italic">feitas para durar.</span>
           </h1>
-          <p className="text-cream/70 max-w-xl mx-auto mb-10 font-body">
-            Peças autorais, desenhadas e produzidas com identidade própria —
-            sofisticação sem excesso, para o seu dia a dia.
-          </p>
-          <div className="flex gap-4 flex-wrap justify-center">
+          <div className="animate-fadeUp [animation-delay:350ms] mt-10 flex gap-4 flex-wrap">
             <Link
               to="/joias"
-              className="bg-gold-500 hover:bg-gold-400 text-forest-950 font-body font-medium px-8 py-3 rounded-full transition-colors"
+              className="inline-flex items-center justify-center bg-paper text-ink px-9 py-3.5 text-[11px] uppercase tracking-[0.24em] hover:bg-sand transition-colors duration-300"
             >
               Ver peças
             </Link>
-
             <a
-            href="#sobre"
-            className="border border-gold-400/50 text-cream hover:bg-cream/5 font-body px-8 py-3 rounded-full transition-colors"
+              href="#sobre"
+              className="inline-flex items-center justify-center border border-paper/60 text-paper px-9 py-3.5 text-[11px] uppercase tracking-[0.24em] hover:bg-paper hover:text-ink transition-colors duration-300"
             >
-            Conhecer a JW
-          </a>
+              Conhecer a JW
+            </a>
+          </div>
         </div>
-      </div>
+      </section>
 
-      <Marquee />
-    </section >
+      <Marquee className="bg-paper" />
 
-      {/* SOBRE MIM */ }
-      < section id = "sobre" className = "bg-cream py-24" >
-        <div className="max-w-5xl mx-auto px-6 grid md:grid-cols-2 gap-12 items-center">
+      {/* CATEGORIAS */}
+      <section className="bg-paper py-20 md:py-28">
+        <div className="max-w-6xl mx-auto px-6">
+          <SectionTitle label="Explorar" title="Por categoria" />
+
+          <div className="flex flex-wrap justify-center gap-x-10 gap-y-5 md:gap-x-16">
+            {CATEGORIES.map((c, i) => (
+              <RevealOnScroll key={c} delay={i * 80}>
+                <Link
+                  to={`/joias?category=${encodeURIComponent(c)}`}
+                  className="group font-display text-3xl md:text-4xl text-ink relative"
+                >
+                  {c}
+                  <span className="absolute left-0 -bottom-1 h-px w-0 bg-ink transition-all duration-500 group-hover:w-full" />
+                </Link>
+              </RevealOnScroll>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* PEÇAS EM DESTAQUE */}
+      {featured.length > 0 && (
+        <section className="bg-paper pb-24 md:pb-32">
+          <div className="max-w-6xl mx-auto px-5 md:px-6">
+            <SectionTitle label="Seleção" title="Peças em destaque" />
+
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-x-4 gap-y-10 md:gap-x-6">
+              {featured.map((p, i) => (
+                <RevealOnScroll key={p._id} delay={i * 100}>
+                  <ProductCard product={p} />
+                </RevealOnScroll>
+              ))}
+            </div>
+
+            <RevealOnScroll className="text-center mt-16">
+              <Link to="/joias" className="btn-ghost">
+                Ver todas as peças
+              </Link>
+            </RevealOnScroll>
+          </div>
+        </section>
+      )}
+
+      {/* SOBRE */}
+      <section id="sobre" className="bg-sand py-24 md:py-32">
+        <div className="max-w-5xl mx-auto px-6 grid md:grid-cols-[0.9fr_1fr] gap-12 md:gap-20 items-center">
           <RevealOnScroll>
-            <div className="aspect-[4/5] rounded-lg overflow-hidden bg-forest-900 border border-gold-500/20">
+            <div className="aspect-[4/5] overflow-hidden bg-line">
               <img
                 src="/janayna.jpeg"
                 alt="Janayna Waite, fundadora da JW Joalheria Autoral"
                 loading="lazy"
-                className="w-full h-full object-cover"
+                className="w-full h-full object-cover object-top"
               />
             </div>
           </RevealOnScroll>
 
           <RevealOnScroll delay={150}>
-            <p className="uppercase tracking-[0.3em] text-gold-600 text-xs mb-3">Sobre mim</p>
+            <p className="label mb-4">Sobre mim</p>
 
-            <h2 className="font-display text-3xl md:text-4xl text-forest-950 mb-5">
-              Sejam bem-vindos ao meu sonho
+            <h2 className="heading mb-8">
+              Sejam bem-vindos
+              <br />
+              <span className="italic">ao meu sonho</span>
             </h2>
 
-            <div className="font-body text-ink/80 leading-relaxed space-y-4 text-[15px]">
+            <div className="text-ink/80 leading-[1.8] space-y-4 text-[15px]">
               <p>
                 Vou me apresentar: sou Janayna Waite. Mãe da Hebe, minha calopsita, formada em Marketing e bancária há 12 anos. Atualmente, sou aluna de Ourivesaria na @parque.design e, acima de tudo, uma eterna apaixonada pela arte de criar acessórios.
               </p>
@@ -182,137 +235,99 @@ export default function Home() {
                 Foi assim que nasceu a JW: fruto de um sonho retomado, de uma paixão que resistiu ao tempo e do desejo de transformar minha arte em peças autorais, capazes de eternizar momentos e histórias. Tudo feito com dedicação, cuidado e, principalmente, muito amor.
               </p>
             </div>
-
           </RevealOnScroll>
         </div>
-      </section >
+      </section>
 
-    {/* PEÇAS EM DESTAQUE */ }
-  {
-    featured.length > 0 && (
-      <section className="bg-forest-950 py-24">
-        <div className="max-w-6xl mx-auto px-6">
-          <RevealOnScroll className="text-center mb-12">
-            <p className="uppercase tracking-[0.3em] text-gold-400 text-xs mb-3">Coleção</p>
-            <h2 className="font-display text-3xl md:text-4xl text-cream">Peças em destaque</h2>
-          </RevealOnScroll>
+      {/* COLEÇÕES */}
+      <section className="bg-paper py-24 md:py-32">
+        <div className="max-w-6xl mx-auto px-5 md:px-6">
+          <SectionTitle label="Explorar" title="Coleções" />
 
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-            {featured.map((p, i) => (
-              <RevealOnScroll key={p._id} delay={i * 100}>
-                <ProductCard product={p} />
+          <div className="grid sm:grid-cols-2 gap-5 md:gap-8">
+            {COLLECTIONS.map((c, i) => (
+              <RevealOnScroll key={c} delay={i * 120}>
+                <Link
+                  to={`/joias?collection=${encodeURIComponent(c)}`}
+                  className="group relative block aspect-[4/5] sm:aspect-[5/6] overflow-hidden bg-accent"
+                >
+                  {COLLECTION_IMAGES[c] && (
+                    <img
+                      src={COLLECTION_IMAGES[c]}
+                      alt=""
+                      aria-hidden="true"
+                      loading="lazy"
+                      className="absolute inset-0 w-full h-full object-cover transition-transform duration-[1200ms] ease-out group-hover:scale-105"
+                    />
+                  )}
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent" />
+                  <div className="absolute inset-x-0 bottom-0 p-8 text-paper">
+                    <p className="text-[11px] uppercase tracking-[0.35em] text-paper/80 mb-2">Coleção</p>
+                    <span className="font-display italic text-5xl">{c}</span>
+                    <span className="block mt-4 text-[11px] uppercase tracking-[0.24em] border-b border-paper/50 w-fit pb-1 group-hover:border-paper transition-colors">
+                      Explorar
+                    </span>
+                  </div>
+                </Link>
               </RevealOnScroll>
             ))}
           </div>
-
-          <RevealOnScroll className="text-center mt-12">
-            <Link
-              to="/joias"
-              className="inline-block border border-gold-400 text-gold-300 hover:bg-gold-500/10 font-body px-8 py-3 rounded-full transition-colors"
-            >
-              Ver todas as peças
-            </Link>
-          </RevealOnScroll>
         </div>
       </section>
-    )
-  }
 
-  {/* ANÚNCIOS */ }
-  {
-    announcements.length > 0 && (
-      <section id="anuncios" className="bg-forest-900 py-24">
+      {/* ANÚNCIOS */}
+      {announcements.length > 0 && (
+        <section id="anuncios" className="bg-sand py-24 md:py-32">
+          <div className="max-w-6xl mx-auto px-6">
+            <SectionTitle label="Novidades" title="Anúncios" />
+
+            <RevealOnScroll>
+              {/* Mobile: carrossel horizontal */}
+              <Carousel itemClassName="w-[280px] sm:w-[320px]">
+                {announcements.map((a) => (
+                  <AnnouncementCard key={a._id} announcement={a} />
+                ))}
+              </Carousel>
+
+              {/* Desktop: grid */}
+              <div className="hidden md:grid md:grid-cols-3 md:gap-6">
+                {announcements.map((a) => (
+                  <AnnouncementCard key={a._id} announcement={a} />
+                ))}
+              </div>
+            </RevealOnScroll>
+          </div>
+        </section>
+      )}
+
+      {/* PROCESSO */}
+      <section className="bg-paper py-24 md:py-32">
         <div className="max-w-6xl mx-auto px-6">
-          <RevealOnScroll className="text-center mb-12">
-            <p className="uppercase tracking-[0.3em] text-gold-400 text-xs mb-3">Novidades</p>
-            <h2 className="font-display text-3xl md:text-4xl text-cream">Anúncios</h2>
-          </RevealOnScroll>
+          <SectionTitle label="Nosso processo" title="Do desenho à peça" />
 
-          <RevealOnScroll>
-            {/* Mobile: carrossel horizontal */}
-            <Carousel itemClassName="w-[280px] sm:w-[320px]">
-              {announcements.map((a) => (
-                <AnnouncementCard key={a._id} announcement={a} />
-              ))}
-            </Carousel>
-
-            {/* Desktop: grid */}
-            <div className="hidden md:grid md:grid-cols-3 md:gap-6">
-              {announcements.map((a) => (
-                <AnnouncementCard key={a._id} announcement={a} />
-              ))}
-            </div>
-          </RevealOnScroll>
-        </div>
-      </section>
-    )
-  }
-
-  {/* DIFERENCIAIS */ }
-      <section className="bg-cream py-24">
-        <div className="max-w-5xl mx-auto px-6">
-          <RevealOnScroll className="text-center mb-14">
-            <p className="uppercase tracking-[0.3em] text-gold-600 text-xs mb-3">Nosso processo</p>
-            <h2 className="font-display text-3xl md:text-4xl text-forest-950">
-              Joalheria autoral, do desenho à peça
-            </h2>
-          </RevealOnScroll>
-
-          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-8">
+          <div className="grid sm:grid-cols-2 lg:grid-cols-4 border-t border-line">
             {DIFERENCIAIS.map((d, i) => (
-              <RevealOnScroll key={d.title} delay={i * 100} className="text-center">
-                <div className="w-14 h-14 mx-auto mb-4 rounded-full border border-forest-900/15 flex items-center justify-center text-forest-900">
-                  <d.icon size={22} />
-                </div>
-                <h3 className="font-display text-lg text-forest-950 mb-2">{d.title}</h3>
-                <p className="text-ink/60 text-sm leading-relaxed">{d.text}</p>
+              <RevealOnScroll
+                key={d.title}
+                delay={i * 100}
+                className="py-10 lg:px-8 lg:first:pl-0 border-b border-line lg:border-b-0 lg:border-r lg:last:border-r-0"
+              >
+                <p className="font-display italic text-brass text-2xl mb-4">{d.n}</p>
+                <h3 className="font-display text-2xl text-ink mb-3">{d.title}</h3>
+                <p className="text-stone text-sm leading-relaxed">{d.text}</p>
               </RevealOnScroll>
             ))}
           </div>
         </div>
       </section>
 
-      <Marquee className="bg-forest-950" />
+      {/* AVALIAÇÕES */}
+      {reviews.length > 0 && (
+        <section className="bg-sand py-24 md:py-32">
+          <div className="max-w-6xl mx-auto px-6">
+            <SectionTitle label="Clientes JW" title="Quem já viveu essa experiência" />
 
-  {/* COLEÇÕES */ }
-  <section className="bg-forest-950 py-24">
-    <div className="max-w-5xl mx-auto px-6 text-center">
-      <RevealOnScroll className="mb-12">
-        <p className="uppercase tracking-[0.3em] text-gold-400 text-xs mb-3">Explorar</p>
-        <h2 className="font-display text-3xl md:text-4xl text-cream">Coleções</h2>
-      </RevealOnScroll>
-
-      <div className="grid sm:grid-cols-2 gap-6">
-        {COLLECTIONS.map((c, i) => (
-          <RevealOnScroll key={c} delay={i * 120}>
-            <Link
-              to={`/joias?collection=${encodeURIComponent(c)}`}
-              className="group block border border-gold-500/20 hover:border-gold-400 rounded-2xl py-16 px-6 transition-colors"
-            >
-              <span className="font-display text-3xl text-cream group-hover:text-gold-300 transition-colors">
-                {c}
-              </span>
-            </Link>
-          </RevealOnScroll>
-        ))}
-      </div>
-    </div>
-  </section>
-
-  {/* AVALIAÇÕES */ }
-  {
-    reviews.length > 0 && (
-      <section className="bg-cream py-24">
-        <div className="max-w-5xl mx-auto px-6">
-          <RevealOnScroll className="text-center mb-12">
-            <p className="uppercase tracking-[0.3em] text-gold-600 text-xs mb-3">Clientes JW</p>
-            <h2 className="font-display text-3xl md:text-4xl text-forest-950">
-              Quem já viveu essa experiência
-            </h2>
-          </RevealOnScroll>
-
-          <RevealOnScroll>
-            <div className="bg-gold-300 border border-forest-900/10 rounded-lg p-6">
+            <RevealOnScroll>
               {/* Mobile: carrossel horizontal */}
               <Carousel itemClassName="w-[280px] sm:w-[320px]">
                 {reviews.slice(0, 6).map((r) => (
@@ -320,111 +335,74 @@ export default function Home() {
                 ))}
               </Carousel>
 
-              {/* Desktop: grid fixo 2 linhas x 3 colunas (máx. 6 avaliações) */}
-              <div className="hidden md:grid md:grid-cols-3 md:gap-6">
+              {/* Desktop: grid fixo (máx. 6 avaliações) */}
+              <div className="hidden md:grid md:grid-cols-3 md:gap-x-10 md:gap-y-14">
                 {reviews.slice(0, 6).map((r) => (
                   <ReviewCard key={r._id} review={r} />
                 ))}
               </div>
+            </RevealOnScroll>
+          </div>
+        </section>
+      )}
+
+      {/* LOJA FÍSICA */}
+      <section className="bg-paper py-24 md:py-32">
+        <RevealOnScroll className="max-w-4xl mx-auto px-6">
+          <SectionTitle label="Visite a loja" title="Agora também com endereço físico" className="!mb-12" />
+
+          <div className="grid sm:grid-cols-2 border border-line bg-white">
+            <div className="p-8 md:p-10 sm:border-r border-b sm:border-b-0 border-line">
+              <p className="label mb-5">Local</p>
+              <p className="font-display text-2xl text-ink mb-2">Jardim Botânico</p>
+              <p className="text-stone text-sm leading-relaxed">
+                Rua Visconde de Carandaí, 28
+                <br />
+                Rio de Janeiro, RJ
+              </p>
             </div>
-          </RevealOnScroll>
-        </div>
+
+            <div className="p-8 md:p-10">
+              <p className="label mb-5">Horário</p>
+              <div className="space-y-4">
+                <div>
+                  <p className="font-display text-2xl text-ink">Quarta a sexta</p>
+                  <p className="text-stone text-sm">13h às 19h</p>
+                </div>
+                <div>
+                  <p className="font-display text-2xl text-ink">Sábado</p>
+                  <p className="text-stone text-sm">13h às 17h</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </RevealOnScroll>
       </section>
-    )
-  }
 
-{/* LOJA FÍSICA */}
-<section className="bg-cream py-20 border-t border-forest-900/10">
-  <RevealOnScroll className="max-w-3xl mx-auto px-6">
-    <div className="text-center mb-10">
-      <p className="uppercase tracking-[0.3em] text-gold-600 text-xs mb-3">
-        Visite a loja
-      </p>
-
-      <h2 className="font-display text-3xl text-forest-950">
-        Agora também com endereço físico
-      </h2>
-    </div>
-
-    <div className="grid sm:grid-cols-2 gap-6">
-      {/* LOCAL */}
-      <div className="bg-forest-950/[0.03] border border-forest-900/10 rounded-2xl p-6">
-        <div className="flex items-center gap-3 mb-4">
-          <MapPin size={19} className="text-gold-600 shrink-0" />
-
-          <p className="uppercase tracking-[0.2em] text-gold-700 text-xs font-medium">
-            Local
+      {/* CONTATO */}
+      <section id="contato" className="bg-accent text-paper py-24 md:py-28">
+        <RevealOnScroll className="max-w-2xl mx-auto px-6 text-center">
+          <p className="text-[11px] uppercase tracking-[0.35em] text-paper/70 mb-5">Contato</p>
+          <h2 className="font-display font-light text-4xl md:text-5xl leading-[1.1] mb-6">
+            Vamos criar <span className="italic">sua peça exclusiva?</span>
+          </h2>
+          <p className="text-paper/75 mb-4 leading-relaxed">
+            Fale direto com a Janayna pelo WhatsApp e conte qual momento você quer eternizar em joia,
+            ou nos visite pessoalmente em nosso espaço no Jardim Botânico.
           </p>
-        </div>
-
-        <div className="pl-8">
-          <p className="font-display text-lg text-forest-950 mb-1">
-            Jardim Botânico
+          <p className="text-paper/50 text-xs mb-10">
+            6x sem juros no cartão de crédito · 5% de desconto no Pix · Consultar forma de entrega.
           </p>
-
-          <p className="text-ink/70 text-sm leading-relaxed">
-            Rua Visconde de Carandaí, 28
-            <br />
-            Rio de Janeiro, RJ
-          </p>
-        </div>
-      </div>
-
-      {/* HORÁRIO */}
-      <div className="bg-forest-950/[0.03] border border-forest-900/10 rounded-2xl p-6">
-        <div className="flex items-center gap-3 mb-4">
-          <Clock size={19} className="text-gold-600 shrink-0" />
-
-          <p className="uppercase tracking-[0.2em] text-gold-700 text-xs font-medium">
-            Horário
-          </p>
-        </div>
-
-        <div className="pl-8 space-y-2">
-          <div>
-            <p className="text-sm text-forest-950 font-medium">
-              Quarta a sexta
-            </p>
-            <p className="text-sm text-ink/70">
-              13h às 19h
-            </p>
-          </div>
-
-          <div>
-            <p className="text-sm text-forest-950 font-medium">
-              Sábado
-            </p>
-            <p className="text-sm text-ink/70">
-              13h às 17h
-            </p>
-          </div>
-        </div>
-      </div>
-    </div>
-  </RevealOnScroll>
-</section>
-
-  {/* CONTATO */ }
-  <section id="contato" className="bg-forest-900 py-20">
-    <RevealOnScroll className="max-w-2xl mx-auto px-6 text-center">
-      <h2 className="font-display text-3xl text-cream mb-4">Vamos criar sua peça exclusiva?</h2>
-      <p className="text-cream/70 mb-3 font-body">
-        Fale direto com a Janayna pelo WhatsApp e conte qual momento você quer eternizar em joia,
-        ou nos visite pessoalmente em nosso espaço no Jardim Botânico.
-      </p>
-      <p className="text-cream/40 text-xs mb-8">
-        6x sem juros no cartão de crédito · 5% de desconto no Pix · Consultar forma de entrega.
-      </p>
-      <a
-        href={WHATSAPP_LINK}
-        target="_blank"
-        rel="noreferrer"
-        className="inline-block bg-gold-500 hover:bg-gold-400 text-forest-950 font-body font-medium px-8 py-3 rounded-full transition-colors"
-      >
-        Falar com Janayna
-      </a>
-    </RevealOnScroll>
-  </section>
+          <a
+            href={WHATSAPP_LINK}
+            target="_blank"
+            rel="noreferrer"
+            className="inline-flex items-center justify-center bg-paper text-ink px-10 py-3.5 text-[11px] uppercase tracking-[0.24em] hover:bg-sand transition-colors duration-300"
+          >
+            Falar com Janayna
+          </a>
+        </RevealOnScroll>
+      </section>
     </>
   );
 }

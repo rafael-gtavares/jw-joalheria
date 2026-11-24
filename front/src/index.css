@@ -2,31 +2,126 @@
 @tailwind components;
 @tailwind utilities;
 
+/* =========================
+   TOKENS (canais RGB)
+   Legados: grafite original. O admin os redefine em .theme-admin.
+========================= */
+:root {
+  --forest-950: 21 25 28;
+  --forest-900: 53 61 66;
+  --forest-800: 75 85 91;
+  --forest-700: 98 109 116;
+  --forest-600: 125 136 142;
+  --forest-500: 146 157 162;
+  --gold-300: 244 246 246;
+  --gold-400: 231 234 235;
+  --gold-500: 213 218 220;
+  --gold-600: 184 192 196;
+  --cream: 233 238 240;
+}
+
+/* Painel administrativo: mesma estrutura de classes, paleta clara. */
+.theme-admin {
+  --forest-950: 250 248 245; /* fundo e texto sobre botões escuros */
+  --forest-900: 255 255 255; /* superfícies */
+  --forest-800: 242 239 234;
+  --forest-700: 229 225 218;
+  --forest-600: 207 202 193;
+  --forest-500: 163 158 148;
+  --gold-300: 27 27 26;
+  --gold-400: 58 63 66;
+  --gold-500: 58 63 66; /* botões e bordas de destaque */
+  --gold-600: 107 104 98;
+  --cream: 27 27 26; /* texto */
+  background-color: #faf8f5;
+  color: #1b1b1a;
+}
+
+/* Cores de estado legíveis sobre fundo claro (o admin usa tons -200/-300) */
+.theme-admin .text-red-200,
+.theme-admin .text-red-300,
+.theme-admin .text-red-400 { color: #b42318; }
+.theme-admin .text-green-300,
+.theme-admin .text-green-400 { color: #15803d; }
+.theme-admin .text-yellow-200,
+.theme-admin .text-yellow-300 { color: #92400e; }
+.theme-admin .text-blue-300,
+.theme-admin .text-sky-300 { color: #1d4ed8; }
+.theme-admin .text-orange-300 { color: #c2410c; }
+.theme-admin .text-purple-300 { color: #7e22ce; }
+.theme-admin select option { color: #1b1b1a; background: #fff; }
+
 html {
   scroll-behavior: smooth;
 }
 
 /* Compensa a altura do header fixo ao rolar até uma seção via âncora */
 section[id] {
-  scroll-margin-top: 90px;
+  scroll-margin-top: 110px;
 }
 
 body {
-  @apply bg-cream text-ink font-body antialiased;
+  @apply bg-paper text-ink font-body font-light antialiased;
 }
 
 h1, h2, h3, h4 {
-  @apply font-display;
+  @apply font-display font-normal;
 }
 
 ::selection {
-  @apply bg-gold-400/40;
+  @apply bg-accent text-paper;
 }
 
+/* =========================
+   COMPONENTES DA LOJA
+========================= */
+@layer components {
+  /* Rótulo pequeno em caixa alta */
+  .label {
+    @apply text-[11px] uppercase tracking-[0.28em] text-stone font-normal;
+  }
+
+  /* Título de seção */
+  .heading {
+    @apply font-display text-4xl md:text-5xl leading-[1.1] text-ink;
+  }
+
+  /* Botão primário: retangular, fino, grafite */
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 bg-accent text-paper px-9 py-3.5 text-[11px] uppercase tracking-[0.24em] font-normal transition-colors duration-300 hover:bg-ink disabled:opacity-50 disabled:pointer-events-none;
+  }
+
+  /* Botão secundário: só linha */
+  .btn-ghost {
+    @apply inline-flex items-center justify-center gap-2 border border-ink/40 text-ink px-9 py-3.5 text-[11px] uppercase tracking-[0.24em] font-normal transition-colors duration-300 hover:bg-ink hover:text-paper hover:border-ink disabled:opacity-50 disabled:pointer-events-none;
+  }
+
+  /* Link sublinhado discreto */
+  .link-line {
+    @apply text-[11px] uppercase tracking-[0.24em] text-ink border-b border-ink/30 pb-1 transition-colors duration-300 hover:border-ink;
+  }
+
+  /* Campo de formulário: apenas linha inferior */
+  .field {
+    @apply w-full bg-transparent border-0 border-b border-line focus:border-ink outline-none rounded-none py-2.5 text-ink placeholder:text-stone/60 transition-colors duration-300;
+  }
+
+  .field-error {
+    @apply text-sm text-red-800 bg-red-50 border border-red-200 px-4 py-3;
+  }
+
+  .panel {
+    @apply bg-white border border-line;
+  }
+}
+
+/* =========================
+   MOVIMENTO
+========================= */
 .reveal {
   opacity: 0;
-  transform: translateY(28px);
-  transition: opacity 0.8s ease, transform 0.8s ease;
+  transform: translateY(18px);
+  transition: opacity 0.9s ease, transform 0.9s ease;
 }
 
 .reveal.is-visible {
@@ -40,8 +135,13 @@ h1, h2, h3, h4 {
     transform: none;
     transition: none;
   }
-  .animate-marquee {
+  .animate-marquee,
+  .animate-fadeUp,
+  .animate-fadeIn {
     animation: none !important;
+  }
+  html {
+    scroll-behavior: auto;
   }
 }
 
@@ -57,6 +157,11 @@ button:focus-visible,
 input:focus-visible,
 select:focus-visible,
 textarea:focus-visible {
-  outline: 2px solid #B0A996;
-  outline-offset: 2px;
+  outline: 1px solid #3a3f42;
+  outline-offset: 3px;
+}
+
+/* Fundo dos modais do admin: escurece em vez de clarear */
+.theme-admin .bg-forest-950\/80 {
+  background-color: rgb(27 27 26 / 0.45);
 }
