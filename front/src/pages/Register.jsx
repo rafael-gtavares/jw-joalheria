@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 import friendlyAuthError from "../helpers/authErrors";
+import { GENDER_OPTIONS } from "../helpers/orderStatus";
 
 export default function Register() {
   const { register, loginWithGoogle } = useAuth();
@@ -10,6 +11,8 @@ export default function Register() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [birthDate, setBirthDate] = useState("");
+  const [gender, setGender] = useState("nao_informado");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
@@ -19,7 +22,10 @@ export default function Register() {
     setError("");
     setLoading(true);
     try {
-      await register(name, email, password);
+      await register(name, email, password, {
+        ...(birthDate ? { birthDate } : {}),
+        gender,
+      });
       navigate("/");
     } catch (err) {
       setError(friendlyAuthError(err));
@@ -86,8 +92,37 @@ export default function Register() {
           minLength={6}
           value={password}
           onChange={(e) => setPassword(e.target.value)}
-          className="w-full bg-forest-950 border border-gold-500/20 focus:border-gold-400 outline-none rounded px-4 py-2 text-cream mb-6"
+          className="w-full bg-forest-950 border border-gold-500/20 focus:border-gold-400 outline-none rounded px-4 py-2 text-cream mb-4"
         />
+
+        <label className="block text-cream/70 text-xs uppercase tracking-wider mb-1">
+          Data de nascimento <span className="normal-case text-cream/40">(opcional)</span>
+        </label>
+        <input
+          type="date"
+          value={birthDate}
+          max={new Date().toISOString().slice(0, 10)}
+          onChange={(e) => setBirthDate(e.target.value)}
+          className="w-full bg-forest-950 border border-gold-500/20 focus:border-gold-400 outline-none rounded px-4 py-2 text-cream mb-4"
+        />
+
+        <label className="block text-cream/70 text-xs uppercase tracking-wider mb-1">
+          Sexo <span className="normal-case text-cream/40">(opcional)</span>
+        </label>
+        <select
+          value={gender}
+          onChange={(e) => setGender(e.target.value)}
+          className="w-full bg-forest-950 border border-gold-500/20 focus:border-gold-400 outline-none rounded px-4 py-2 text-cream mb-2"
+        >
+          {GENDER_OPTIONS.map((g) => (
+            <option key={g.value} value={g.value}>
+              {g.label}
+            </option>
+          ))}
+        </select>
+        <p className="text-cream/40 text-[11px] mb-6">
+          Informações voluntárias, usadas apenas para estatísticas da loja. Você pode alterar depois no perfil.
+        </p>
 
         <button
           type="submit"

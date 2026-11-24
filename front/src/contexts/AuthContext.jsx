@@ -94,7 +94,8 @@ export function AuthProvider({ children }) {
     return result.user;
   }
 
-  async function register(name, email, password) {
+  // extra: { birthDate, gender } — opcionais, usados só para estatísticas da loja.
+  async function register(name, email, password, extra = {}) {
     await applyPersistence(false);
     const credential = await createUserWithEmailAndPassword(auth, email, password);
     if (name) {
@@ -102,7 +103,7 @@ export function AuthProvider({ children }) {
     }
     // Cadastro público sempre cria role "user" — o backend ignora qualquer
     // role vinda do cliente e usa a Custom Claim (inexistente = "user").
-    await userApi.sync({ name, provider: "password" });
+    await userApi.sync({ name, provider: "password", ...extra });
     return credential.user;
   }
 

@@ -104,14 +104,9 @@ async function resolveCartItems(items) {
   return { weightGrams, declaredValue };
 }
 
-/**
- * Calcula o frete para o CEP de destino informado, considerando todos os
- * itens do carrinho (produtos + quantidades).
- *
- * @param {string} cep CEP de destino informado pelo cliente.
- * @param {Array<{productId: string, quantity: number}>} items itens do carrinho.
- */
-export async function calculateShipping(cep, items) {
+// Valida CEP/origem e resolve peso e valor declarado do pacote (sempre a
+// partir do MongoDB). Compartilhado por `calculateShipping` e `quoteForService`.
+async function preparePackage(cep, items) {
   if (!isValidCep(cep)) {
     throw new Error("CEP inválido. Use o formato 00000-000.");
   }
@@ -124,17 +119,21 @@ export async function calculateShipping(cep, items) {
 
   const { weightGrams: productsWeight, declaredValue } = await resolveCartItems(items);
 
-  // peso dos produtos + peso fixo da embalagem = peso total enviado aos Correios
-  const psObjeto = Math.round(productsWeight + shippingConfig.packaging.weightGrams);
-  // soma do valor de todos os produtos do pacote
-  const vlDeclarado = Math.round(declaredValue * 100) / 100;
+  return {
+    destinationCep: normalizeCep(cep),
+    // peso dos produtos + peso fixo da embalagem = peso total enviado aos Correios
+    psObjeto: Math.round(productsWeight + shippingConfig.packaging.weightGrams),
+    // soma do valor de todos os produtos do pacote
+    vlDeclarado: Math.round(declaredValue * 100) / 100,
+  };
+}
 
-  const destinationCep = normalizeCep(cep);
-
+async function quoteService(service, pkg) {
   const { price, shippingDays } = await getPrecoPrazo({
-    cepDestino: destinationCep,
-    psObjeto,
-    vlDeclarado,
+    serviceCode: service.code,
+    cepDestino: pkg.destinationCep,
+    psObjeto: pkg.psObjeto,
+    vlDeclarado: pkg.vlDeclarado,
   });
 
   const productionDays = shippingConfig.productionDays;
@@ -142,16 +141,68 @@ export async function calculateShipping(cep, items) {
   const estimatedDeliveryDate = addBusinessDays(new Date(), totalBusinessDays);
 
   return {
-    cep: destinationCep,
-    price,
+    serviceCode: service.code,
+    serviceName: service.name,
+    // Correios devolvem reais; arredonda para centavos para evitar ruído de ponto flutuante.
+    price: Math.round(price * 100) / 100,
 
     productionDays,
     shippingDays,
     totalBusinessDays,
 
     estimatedDeliveryDate: formatDate(estimatedDeliveryDate),
+  };
+}
 
+/**
+ * Calcula as opções de frete (ex.: PAC e SEDEX) para o CEP de destino,
+ * considerando todos os itens do carrinho (produtos + quantidades).
+ * Um serviço que falha é omitido; só falha se nenhum serviço responder.
+ *
+ * @param {string} cep CEP de destino informado pelo cliente.
+ * @param {Array<{productId: string, quantity: number}>} items itens do carrinho.
+ */
+export async function calculateShipping(cep, items) {
+  const pkg = await preparePackage(cep, items);
+  const services = shippingConfig.services;
+
+  if (!services.length) {
+    throw new ShippingProviderError(
+      "Integração com os Correios não configurada. Configure no .env do backend: CORREIOS_SERVICES."
+    );
+  }
+
+  const settled = await Promise.allSettled(services.map((s) => quoteService(s, pkg)));
+  const options = settled.filter((r) => r.status === "fulfilled").map((r) => r.value);
+
+  if (!options.length) {
+    const firstError = settled.find((r) => r.status === "rejected")?.reason;
+    throw firstError instanceof ShippingProviderError
+      ? firstError
+      : new ShippingProviderError("Não foi possível calcular o frete pelos Correios no momento.");
+  }
+
+  return {
+    cep: pkg.destinationCep,
+    options,
     provider: "correios",
     isEstimate: false,
   };
+}
+
+/**
+ * Recalcula UMA opção de frete (a escolhida pelo cliente). Usado na criação
+ * do pedido: o valor do frete nunca vem do cliente, é sempre recotado aqui.
+ *
+ * @returns {Promise<{ cep: string, option: object }>}
+ */
+export async function quoteForService(cep, items, serviceCode) {
+  const service = shippingConfig.services.find((s) => s.code === String(serviceCode));
+  if (!service) {
+    throw new Error("Opção de frete inválida. Calcule o frete novamente.");
+  }
+
+  const pkg = await preparePackage(cep, items);
+  const option = await quoteService(service, pkg);
+  return { cep: pkg.destinationCep, option };
 }

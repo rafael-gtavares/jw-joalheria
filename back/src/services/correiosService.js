@@ -22,10 +22,10 @@ let cachedToken = null;
 let cachedTokenExpiresAt = 0;
 
 function assertConfigured() {
-  const { api, originCep, serviceCode } = shippingConfig;
+  const { api, originCep, services } = shippingConfig;
   const missing = [];
   if (!originCep) missing.push("CORREIOS_CEP_ORIGEM");
-  if (!serviceCode) missing.push("CORREIOS_SERVICE_CODE");
+  if (!services.length) missing.push("CORREIOS_SERVICES");
   if (!api.username) missing.push("CORREIOS_API_USERNAME");
   if (!api.password) missing.push("CORREIOS_API_PASSWORD");
   if (!api.cartaoPostagem) missing.push("CORREIOS_API_CARTAO_POSTAGEM");
@@ -69,12 +69,25 @@ function parseBrazilianNumber(value) {
 // Autentica por cartão de postagem (usuário + senha/código de acesso da
 // API + cartão de postagem), conforme a API Token dos Correios:
 // POST /token/v1/autentica/cartaopostagem
-async function authenticate() {
+// Várias cotações simultâneas (PAC + SEDEX) compartilham a mesma
+// autenticação em andamento, em vez de autenticar uma vez por chamada.
+let pendingAuth = null;
+
+function authenticate() {
   const now = Date.now();
   if (cachedToken && now < cachedTokenExpiresAt) {
-    return cachedToken;
+    return Promise.resolve(cachedToken);
   }
+  if (!pendingAuth) {
+    pendingAuth = requestToken().finally(() => {
+      pendingAuth = null;
+    });
+  }
+  return pendingAuth;
+}
 
+async function requestToken() {
+  const now = Date.now();
   const { api } = shippingConfig;
   const basicAuth = Buffer.from(`${api.username}:${api.password}`).toString("base64");
 
@@ -122,16 +135,16 @@ async function authenticate() {
  * produto/parâmetro).
  *
  * @param {Object} params
+ * @param {string} params.serviceCode código do serviço ("coProduto"), ex.: PAC/SEDEX.
  * @param {string} params.cepDestino CEP de destino, somente dígitos.
  * @param {number} params.psObjeto peso total do pacote pronto, em gramas.
  * @param {number} params.vlDeclarado valor declarado da encomenda, em reais.
  * @returns {Promise<{ price: number, shippingDays: number }>}
  */
-export async function getPrecoPrazo({ cepDestino, psObjeto, vlDeclarado }) {
+export async function getPrecoPrazo({ serviceCode, cepDestino, psObjeto, vlDeclarado }) {
   assertConfigured();
 
-  const token = await authenticate();
-  const { originCep, serviceCode, objectType, packaging, api } = shippingConfig;
+  const { originCep, objectType, packaging, api } = shippingConfig;
 
   const parametro = {
     coProduto: serviceCode,
@@ -151,14 +164,47 @@ export async function getPrecoPrazo({ cepDestino, psObjeto, vlDeclarado }) {
   if (api.contrato) parametro.nuContrato = api.contrato;
   if (api.dr) parametro.nuDR = api.dr;
 
-  const body = {
-    idLote: "1",
-    parametrosProduto: [parametro],
-  };
+  // Preço e prazo são APIs distintas nos Correios (a de Preço não devolve
+  // prazo): consulta as duas em paralelo.
+  const [priceItem, deadlineItem] = await Promise.all([
+    postBatch("/preco/v1/nacional", { idLote: "1", parametrosProduto: [parametro] }),
+    postBatch("/prazo/v1/nacional", {
+      idLote: "1",
+      parametrosPrazo: [
+        {
+          coProduto: serviceCode,
+          nuRequisicao: "1",
+          cepOrigem: parametro.cepOrigem,
+          cepDestino: parametro.cepDestino,
+        },
+      ],
+    }),
+  ]);
 
-  let response;
-  try {
-    response = await fetchWithTimeout(`${api.baseUrl}/preco/v1/nacional`, {
+  const price = parseBrazilianNumber(priceItem.pcFinal ?? priceItem.valor ?? priceItem.preco);
+  const shippingDays = parseInt(
+    deadlineItem.prazoEntrega ?? deadlineItem.deadline ?? deadlineItem.prazo,
+    10
+  );
+
+  if (!Number.isFinite(price)) {
+    throw new ShippingProviderError("Preço retornado pelos Correios em formato inesperado.");
+  }
+  if (!Number.isFinite(shippingDays)) {
+    throw new ShippingProviderError("Prazo retornado pelos Correios em formato inesperado.");
+  }
+
+  return { price, shippingDays };
+}
+
+// POST em lote (um único item) com autenticação e uma nova tentativa se o
+// token tiver expirado antes do previsto. Devolve o item da resposta.
+async function postBatch(path, body) {
+  const { api } = shippingConfig;
+
+  const call = async () => {
+    const token = await authenticate();
+    return fetchWithTimeout(`${api.baseUrl}${path}`, {
       method: "POST",
       headers: {
         Authorization: `Bearer ${token}`,
@@ -167,16 +213,16 @@ export async function getPrecoPrazo({ cepDestino, psObjeto, vlDeclarado }) {
       },
       body: JSON.stringify(body),
     });
-  } catch (err) {
-    if (err instanceof ShippingProviderError) throw err;
-    throw new ShippingProviderError("Não foi possível conectar à API dos Correios.");
-  }
+  };
 
+  let response = await call();
   if (response.status === 401 || response.status === 403) {
-    // Token pode ter expirado antes do previsto; limpa o cache para a
-    // próxima tentativa reautenticar.
     cachedToken = null;
-    throw new ShippingProviderError("Sessão com os Correios expirada ou não autorizada.");
+    response = await call();
+    if (response.status === 401 || response.status === 403) {
+      cachedToken = null;
+      throw new ShippingProviderError("Sessão com os Correios expirada ou não autorizada.");
+    }
   }
   if (!response.ok) {
     throw new ShippingProviderError(
@@ -189,19 +235,107 @@ export async function getPrecoPrazo({ cepDestino, psObjeto, vlDeclarado }) {
 
   if (!item || item.txErro || item.erro) {
     throw new ShippingProviderError(
-      item?.txErro || item?.erro || "Os Correios não retornaram um preço para este CEP."
+      item?.txErro || item?.erro || "Os Correios não retornaram preço/prazo para este CEP."
     );
   }
+  return item;
+}
 
-  const price = parseBrazilianNumber(item.pcFinal ?? item.valor ?? item.preco);
-  const shippingDays = parseInt(item.prazoEntrega ?? item.deadline ?? item.prazo, 10);
+// ---------------------------------------------------------------------------
+// Rastreamento (API SRO Rastro)
+// ---------------------------------------------------------------------------
+// ATENÇÃO: endpoint e formato da resposta abaixo seguem a documentação pública
+// do SRO Rastro (GET /srorastro/v1/objetos/{codigo}?resultado=T), mas precisam
+// ser confirmados com o contrato/credenciais da joalheria. A normalização é
+// tolerante a variações de campos; a classificação do status usa o texto do
+// evento mais recente.
 
-  if (!Number.isFinite(price)) {
-    throw new ShippingProviderError("Preço retornado pelos Correios em formato inesperado.");
+function classifyEvent(event) {
+  const text = `${event.description || ""}`.toLowerCase();
+  const code = String(event.code || "").toUpperCase();
+
+  if (/devolvid|devolu[cç][aã]o ao remetente/.test(text) || code === "BDE-DEV") return "devolvido";
+  if (/n[aã]o entregue|ausente|destinat[aá]rio n[aã]o|tentativa/.test(text)) {
+    return "tentativa_sem_sucesso";
   }
-  if (!Number.isFinite(shippingDays)) {
-    throw new ShippingProviderError("Prazo retornado pelos Correios em formato inesperado.");
+  if (/entregue ao destinat|objeto entregue/.test(text)) return "entregue";
+  if (/saiu para entrega|saiu para entrega ao destinat/.test(text) || code === "OEC") {
+    return "saiu_para_entrega";
+  }
+  if (/objeto postado|postado/.test(text) || code === "PO") return "postado";
+  if (/encaminhado|em tr[aâ]nsito|recebido|chegou|unidade de tratamento|tratamento/.test(text)) {
+    return "em_transito";
+  }
+  return "em_transito";
+}
+
+function normalizeTrackingEvent(raw) {
+  const unit = raw.unidade || {};
+  const address = unit.endereco || {};
+  const place = [address.cidade, address.uf].filter(Boolean).join("/");
+  const at = new Date(raw.dtHrCriado || raw.data || raw.dataHora || "");
+
+  return {
+    at: Number.isNaN(at.getTime()) ? undefined : at,
+    description: String(raw.descricao || raw.description || "").trim(),
+    location: [unit.nome || unit.tipo, place].filter(Boolean).join(" - "),
+    code: String(raw.codigo || raw.tipo || ""),
+  };
+}
+
+/**
+ * Consulta o rastreio de um objeto na API dos Correios.
+ *
+ * @param {string} code código de rastreio (ex.: AA123456789BR)
+ * @returns {Promise<{ deliveryStatus: string, events: Array }>} eventos do mais
+ *   recente para o mais antigo.
+ */
+export async function getTracking(code) {
+  assertConfigured();
+
+  const { api } = shippingConfig;
+  const url = `${api.baseUrl}/srorastro/v1/objetos/${encodeURIComponent(code)}?resultado=T`;
+
+  const call = async () => {
+    const token = await authenticate();
+    return fetchWithTimeout(url, {
+      method: "GET",
+      headers: { Authorization: `Bearer ${token}`, Accept: "application/json" },
+    });
+  };
+
+  let response = await call();
+  if (response.status === 401 || response.status === 403) {
+    cachedToken = null;
+    response = await call();
+    if (response.status === 401 || response.status === 403) {
+      cachedToken = null;
+      throw new ShippingProviderError("Sessão com os Correios expirada ou não autorizada.");
+    }
+  }
+  if (response.status === 429) {
+    throw new ShippingProviderError("Limite de consultas dos Correios atingido. Tente mais tarde.");
+  }
+  if (!response.ok) {
+    throw new ShippingProviderError("Não foi possível consultar o rastreio nos Correios.");
   }
 
-  return { price, shippingDays };
+  const data = await response.json().catch(() => null);
+  const object = Array.isArray(data?.objetos) ? data.objetos[0] : Array.isArray(data) ? data[0] : data;
+
+  if (!object) {
+    throw new ShippingProviderError("Resposta inesperada do rastreio dos Correios.");
+  }
+
+  const rawEvents = Array.isArray(object.eventos) ? object.eventos : [];
+  if (!rawEvents.length) {
+    // Objeto ainda não postado/registrado: sem eventos não é erro.
+    return { deliveryStatus: "aguardando_postagem", events: [] };
+  }
+
+  const events = rawEvents
+    .map(normalizeTrackingEvent)
+    .sort((a, b) => (b.at?.getTime() || 0) - (a.at?.getTime() || 0));
+
+  return { deliveryStatus: classifyEvent(events[0]), events };
 }

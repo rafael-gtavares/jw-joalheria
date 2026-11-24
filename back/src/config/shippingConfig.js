@@ -16,6 +16,23 @@ function toNumber(value, fallback) {
   return Number.isFinite(n) ? n : fallback;
 }
 
+function parseServices(list, legacyCode) {
+  const parsed = String(list || "")
+    .split(",")
+    .map((entry) => entry.trim())
+    .filter(Boolean)
+    .map((entry) => {
+      const [code, ...nameParts] = entry.split(":");
+      const trimmedCode = code.trim();
+      return { code: trimmedCode, name: nameParts.join(":").trim() || trimmedCode };
+    })
+    .filter((s) => s.code);
+
+  if (parsed.length) return parsed;
+  if (legacyCode) return [{ code: legacyCode.trim(), name: "Correios" }];
+  return [];
+}
+
 export const shippingConfig = {
   // CEP de origem: pertence à loja/joalheria. Nunca é informado pelo cliente.
   originCep: process.env.CORREIOS_CEP_ORIGEM || "",
@@ -29,8 +46,13 @@ export const shippingConfig = {
     heightCm: toNumber(process.env.CORREIOS_PACKAGE_HEIGHT_CM, 1),
   },
 
-  // Código do serviço dos Correios (ex.: PAC, SEDEX) usado na cotação.
-  serviceCode: process.env.CORREIOS_SERVICE_CODE || "",
+  // Serviços dos Correios oferecidos ao cliente (ex.: PAC, SEDEX).
+  // CORREIOS_SERVICES="03298:PAC,03220:SEDEX"; cai no CORREIOS_SERVICE_CODE
+  // (um único serviço) se a lista não estiver definida.
+  services: parseServices(
+    process.env.CORREIOS_SERVICES,
+    process.env.CORREIOS_SERVICE_CODE
+  ),
 
   // Tipo do objeto postado, exigido pela API de Preço dos Correios:
   // 1 = Envelope | 2 = Pacote/Caixa | 3 = Rolo/Prisma.
@@ -58,10 +80,10 @@ export const shippingConfig = {
 // Indica se há informação suficiente para de fato chamar a API dos Correios.
 // Usado para dar uma mensagem de erro clara em vez de uma falha genérica.
 export function isCorreiosConfigured() {
-  const { api, originCep, serviceCode } = shippingConfig;
+  const { api, originCep, services } = shippingConfig;
   return Boolean(
     originCep &&
-      serviceCode &&
+      services.length &&
       api.username &&
       api.password &&
       api.cartaoPostagem

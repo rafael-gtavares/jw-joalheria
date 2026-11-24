@@ -20,6 +20,10 @@ import { AuthProvider } from "./contexts/AuthContext";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import Profile from "./pages/Profile";
+import PaymentReturn from "./pages/PaymentReturn";
+import Orders from "./pages/Orders";
+import OrderDetail from "./pages/OrderDetail";
+import RequireUser from "./components/RequireUser";
 
 import AuthPromptModal from "./components/auth/AuthPromptModal";
 import { useCart } from "./contexts/CartContext";
@@ -55,6 +59,30 @@ export default function App() {
           <Route path="/login" element={<SiteLayout><Login /></SiteLayout>} />
           <Route path="/cadastro" element={<SiteLayout><Register /></SiteLayout>} />
           <Route path="/perfil" element={<SiteLayout><Profile /></SiteLayout>} />
+
+          {/* Histórico e acompanhamento de pedidos do cliente */}
+          <Route
+            path="/pedidos"
+            element={<SiteLayout><RequireUser><Orders /></RequireUser></SiteLayout>}
+          />
+          <Route
+            path="/pedidos/:id"
+            element={<SiteLayout><RequireUser><OrderDetail /></RequireUser></SiteLayout>}
+          />
+
+          {/* Retorno do checkout do Mercado Pago (back_urls da preferência) */}
+          <Route
+            path="/pagamento/sucesso"
+            element={<SiteLayout><RequireUser><PaymentReturn variant="sucesso" /></RequireUser></SiteLayout>}
+          />
+          <Route
+            path="/pagamento/pendente"
+            element={<SiteLayout><RequireUser><PaymentReturn variant="pendente" /></RequireUser></SiteLayout>}
+          />
+          <Route
+            path="/pagamento/falha"
+            element={<SiteLayout><RequireUser><PaymentReturn variant="falha" /></RequireUser></SiteLayout>}
+          />
 
           <Route path="/admin/login" element={<AdminLogin />} />
           <Route

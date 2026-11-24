@@ -6,6 +6,7 @@
     "dev": "nodemon server.js",
     "start": "node server.js",
     "seed": "node scripts/seed.js",
+    "seed:orders": "node scripts/seedOrderTracking.js",
     "migrate:shipping": "node scripts/migrateProductShipping.js"
   },
   "dependencies": {
@@ -14,6 +15,7 @@
     "dotenv": "^16.4.5",
     "express": "^4.19.2",
     "firebase-admin": "^12.6.0",
+    "mercadopago": "^3.6.0",
     "mongoose": "^8.5.0",
     "multer": "^1.4.5-lts.1"
   },

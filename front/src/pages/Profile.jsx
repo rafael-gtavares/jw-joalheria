@@ -1,7 +1,15 @@
-import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import React, { useEffect, useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 import friendlyAuthError from "../helpers/authErrors";
+import { orderApi } from "../api/orderApi";
+import { userApi } from "../api/userApi";
+import {
+  GENDER_OPTIONS,
+  formatCurrency,
+  shortOrderId,
+  customerOrderLabel,
+} from "../helpers/orderStatus";
 
 export default function Profile() {
   const { user, role, logout, updateDisplayName, changePassword } = useAuth();
@@ -11,6 +19,8 @@ export default function Profile() {
   const [nameStatus, setNameStatus] = useState("");
   const [nameError, setNameError] = useState("");
   const [savingName, setSavingName] = useState(false);
+  const [birthDate, setBirthDate] = useState("");
+  const [gender, setGender] = useState("nao_informado");
 
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
@@ -20,6 +30,30 @@ export default function Profile() {
 
   const isPasswordProvider = user?.providerData?.some((p) => p.providerId === "password");
 
+  const [orders, setOrders] = useState([]);
+  const [ordersLoading, setOrdersLoading] = useState(true);
+  const [ordersError, setOrdersError] = useState("");
+
+  useEffect(() => {
+    if (!user) return;
+    userApi
+      .me()
+      .then((profile) => {
+        setBirthDate(profile.birthDate || "");
+        setGender(profile.gender || "nao_informado");
+      })
+      .catch(() => {});
+  }, [user]);
+
+  useEffect(() => {
+    if (!user) return;
+    orderApi
+      .listMine()
+      .then(setOrders)
+      .catch((err) => setOrdersError(err.message))
+      .finally(() => setOrdersLoading(false));
+  }, [user]);
+
   async function handleSaveName(e) {
     e.preventDefault();
     setNameError("");
@@ -27,7 +61,8 @@ export default function Profile() {
     setSavingName(true);
     try {
       await updateDisplayName(name);
-      setNameStatus("Nome atualizado.");
+      await userApi.updateMe({ birthDate, gender });
+      setNameStatus("Dados atualizados.");
     } catch (err) {
       setNameError(friendlyAuthError(err));
     } finally {
@@ -103,8 +138,37 @@ export default function Profile() {
             type="email"
             value={user.email || ""}
             disabled
-            className="w-full bg-forest-950/60 border border-gold-500/10 outline-none rounded px-4 py-2 text-cream/50 mb-6 cursor-not-allowed"
+            className="w-full bg-forest-950/60 border border-gold-500/10 outline-none rounded px-4 py-2 text-cream/50 mb-4 cursor-not-allowed"
           />
+
+          <label className="block text-cream/70 text-xs uppercase tracking-wider mb-1">
+            Data de nascimento <span className="normal-case text-cream/40">(opcional)</span>
+          </label>
+          <input
+            type="date"
+            value={birthDate}
+            max={new Date().toISOString().slice(0, 10)}
+            onChange={(e) => setBirthDate(e.target.value)}
+            className="w-full bg-forest-950 border border-gold-500/20 focus:border-gold-400 outline-none rounded px-4 py-2 text-cream mb-4"
+          />
+
+          <label className="block text-cream/70 text-xs uppercase tracking-wider mb-1">
+            Sexo <span className="normal-case text-cream/40">(opcional)</span>
+          </label>
+          <select
+            value={gender}
+            onChange={(e) => setGender(e.target.value)}
+            className="w-full bg-forest-950 border border-gold-500/20 focus:border-gold-400 outline-none rounded px-4 py-2 text-cream mb-2"
+          >
+            {GENDER_OPTIONS.map((g) => (
+              <option key={g.value} value={g.value}>
+                {g.label}
+              </option>
+            ))}
+          </select>
+          <p className="text-cream/40 text-[11px] mb-6">
+            Informações voluntárias, usadas apenas para estatísticas da loja.
+          </p>
 
           <button
             type="submit"
@@ -176,6 +240,46 @@ export default function Profile() {
             </p>
           </div>
         )}
+
+        {/* Meus pedidos (resumo) */}
+        <div className="bg-forest-900 border border-gold-500/20 rounded-lg p-6">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="font-display text-lg text-cream">Meus pedidos</h2>
+            {orders.length > 0 && (
+              <Link to="/pedidos" className="text-gold-300 hover:text-gold-400 text-xs underline">
+                Ver todos
+              </Link>
+            )}
+          </div>
+
+          {ordersLoading && <p className="text-cream/40 text-sm">Carregando...</p>}
+          {ordersError && (
+            <p className="bg-red-500/10 border border-red-500/30 text-red-300 text-sm rounded px-3 py-2">
+              {ordersError}
+            </p>
+          )}
+          {!ordersLoading && !ordersError && orders.length === 0 && (
+            <p className="text-cream/40 text-sm">Você ainda não fez nenhum pedido.</p>
+          )}
+
+          <div className="space-y-2">
+            {orders.slice(0, 3).map((order) => (
+              <Link
+                key={order._id}
+                to={`/pedidos/${order._id}`}
+                className="flex justify-between items-center gap-3 border border-gold-500/15 hover:border-gold-400 rounded-lg px-4 py-3 text-sm transition-colors"
+              >
+                <span>
+                  <span className="block text-cream">Pedido #{shortOrderId(order._id)}</span>
+                  <span className="block text-gold-300 text-xs uppercase tracking-wide">
+                    {customerOrderLabel(order)}
+                  </span>
+                </span>
+                <span className="text-cream/70">{formatCurrency(order.total)}</span>
+              </Link>
+            ))}
+          </div>
+        </div>
 
         <button
           onClick={handleLogout}

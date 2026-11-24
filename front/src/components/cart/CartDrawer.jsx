@@ -1,20 +1,38 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { X, Minus, Plus, Trash2, ShoppingBag, Loader2, Truck, Info } from "lucide-react";
 import { useCart } from "../../contexts/CartContext";
+import { useAuth } from "../../contexts/AuthContext";
 import { shippingApi } from "../../api/shippingApi";
+import { orderApi } from "../../api/orderApi";
 
 function formatCurrency(value) {
   return Number(value || 0).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 }
 
+// Chave que identifica esta tentativa de checkout. O backend a usa para não
+// criar pedidos duplicados se a requisição for repetida.
+function newIdempotencyKey() {
+  if (typeof crypto !== "undefined" && crypto.randomUUID) return crypto.randomUUID();
+  return `${Date.now()}-${Math.random().toString(36).slice(2)}-${Math.random().toString(36).slice(2)}`;
+}
+
 export default function CartDrawer() {
-  const { items, removeItem, updateQuantity, subtotal, open, setOpen, clearCart } = useCart();
+  const { items, removeItem, updateQuantity, subtotal, open, setOpen, clearCart, setAuthPromptOpen } =
+    useCart();
+  const { user } = useAuth();
   const [cep, setCep] = useState("");
-  const [shipping, setShipping] = useState(null);
+  // Resposta da cotação: { cep, options: [{ serviceCode, serviceName, price, ... }] }
+  const [quote, setQuote] = useState(null);
+  const [selectedCode, setSelectedCode] = useState("");
   const [loadingShipping, setLoadingShipping] = useState(false);
   const [shippingError, setShippingError] = useState("");
-  const [paymentNotice, setPaymentNotice] = useState(false);
+  const [paying, setPaying] = useState(false);
+  const [paymentError, setPaymentError] = useState("");
+  const idempotencyKeyRef = useRef(newIdempotencyKey());
 
+  // Opção de frete escolhida pelo cliente (o valor é só informativo: o
+  // backend recotá o frete na hora de criar o pedido).
+  const shipping = quote?.options.find((o) => o.serviceCode === selectedCode) || null;
   const total = subtotal + (shipping?.price || 0);
 
   // O frete considera peso e valor de TODOS os itens do carrinho, calculados
@@ -22,24 +40,36 @@ export default function CartDrawer() {
   // cálculo já feito, o frete anterior não vale mais e precisa ser refeito.
   const itemsSignature = items.map((i) => `${i.productId}:${i.quantity}`).join("|");
   useEffect(() => {
-    setShipping(null);
+    setQuote(null);
+    setSelectedCode("");
     setShippingError("");
-    setPaymentNotice(false);
+    setPaymentError("");
+    idempotencyKeyRef.current = newIdempotencyKey();
   }, [itemsSignature]);
+
+  function handleSelectOption(code) {
+    setSelectedCode(code);
+    setPaymentError("");
+    idempotencyKeyRef.current = newIdempotencyKey();
+  }
 
   async function handleCalculateShipping(e) {
     e.preventDefault();
     setShippingError("");
-    setShipping(null);
-    setPaymentNotice(false);
+    setPaymentError("");
+    setQuote(null);
+    setSelectedCode("");
     if (!cep.trim()) return;
     setLoadingShipping(true);
     try {
-      const quote = await shippingApi.quote({
+      const result = await shippingApi.quote({
         cep,
         items: items.map((i) => ({ productId: i.productId, quantity: i.quantity })),
       });
-      setShipping(quote);
+      setQuote(result);
+      // Seleciona a opção mais barata por padrão.
+      const cheapest = [...result.options].sort((a, b) => a.price - b.price)[0];
+      setSelectedCode(cheapest?.serviceCode || "");
     } catch (err) {
       setShippingError(err.message);
     } finally {
@@ -47,12 +77,33 @@ export default function CartDrawer() {
     }
   }
 
-  // Pagamento ainda não foi implementado — o botão só fica disponível depois
-  // do frete calculado com sucesso, e por enquanto não redireciona a lugar
-  // nenhum (nem abre WhatsApp).
-  function handleGoToPayment() {
-    if (!shipping) return;
-    setPaymentNotice(true);
+  // Cria o pedido no backend (que recalcula preços e frete, reserva o
+  // estoque e cria a preferência do Mercado Pago) e redireciona para o
+  // checkout do Mercado Pago. O carrinho só é limpo depois da aprovação.
+  async function handleGoToPayment() {
+    if (!shipping || paying) return;
+    if (!user) {
+      setAuthPromptOpen(true);
+      return;
+    }
+
+    setPaying(true);
+    setPaymentError("");
+    try {
+      const order = await orderApi.create({
+        items: items.map((i) => ({ productId: i.productId, quantity: i.quantity })),
+        shippingCep: quote.cep,
+        shippingServiceCode: shipping.serviceCode,
+        customerName: user.displayName || "",
+        idempotencyKey: idempotencyKeyRef.current,
+      });
+      window.location.assign(order.initPoint);
+    } catch (err) {
+      setPaymentError(err.message);
+      // Uma nova tentativa é um novo pedido, com nova chave.
+      idempotencyKeyRef.current = newIdempotencyKey();
+      setPaying(false);
+    }
   }
 
   return (
@@ -152,6 +203,39 @@ export default function CartDrawer() {
               </button>
             </form>
             {shippingError && <p className="text-red-300 text-xs">{shippingError}</p>}
+            {quote && (
+              <div className="space-y-2" role="radiogroup" aria-label="Opções de envio">
+                {quote.options.map((option) => {
+                  const selected = option.serviceCode === selectedCode;
+                  return (
+                    <label
+                      key={option.serviceCode}
+                      className={`flex items-center gap-3 rounded-lg border px-3 py-2 cursor-pointer transition-colors ${
+                        selected
+                          ? "border-gold-400 bg-gold-500/10"
+                          : "border-gold-500/20 hover:border-gold-500/40"
+                      }`}
+                    >
+                      <input
+                        type="radio"
+                        name="shipping-option"
+                        value={option.serviceCode}
+                        checked={selected}
+                        onChange={() => handleSelectOption(option.serviceCode)}
+                        className="accent-gold-400"
+                      />
+                      <span className="flex-1 min-w-0">
+                        <span className="block text-cream text-sm">{option.serviceName}</span>
+                        <span className="block text-cream/50 text-xs">
+                          até {option.totalBusinessDays} dias úteis
+                        </span>
+                      </span>
+                      <span className="text-gold-300 text-sm">{formatCurrency(option.price)}</span>
+                    </label>
+                  );
+                })}
+              </div>
+            )}
             {shipping && (
               <p className="text-cream/50 text-xs flex items-start gap-1.5">
                 <Truck size={13} className="text-gold-400 mt-0.5 shrink-0" />
@@ -192,10 +276,16 @@ export default function CartDrawer() {
 
             <button
               onClick={handleGoToPayment}
-              disabled={!shipping}
-              className="w-full bg-gold-500 hover:bg-gold-400 disabled:bg-gold-500/30 disabled:cursor-not-allowed disabled:hover:bg-gold-500/30 text-forest-950 font-medium py-3 rounded-full transition-colors"
+              disabled={!shipping || paying}
+              className="w-full bg-gold-500 hover:bg-gold-400 disabled:bg-gold-500/30 disabled:cursor-not-allowed disabled:hover:bg-gold-500/30 text-forest-950 font-medium py-3 rounded-full transition-colors flex items-center justify-center gap-2"
             >
-              Ir para pagamento
+              {paying ? (
+                <>
+                  <Loader2 size={16} className="animate-spin" /> Preparando pagamento...
+                </>
+              ) : (
+                "Ir para pagamento"
+              )}
             </button>
             {!shipping && (
               <p className="text-cream/50 text-xs text-center flex items-center justify-center gap-1.5">
@@ -203,11 +293,7 @@ export default function CartDrawer() {
                 Calcule o frete para continuar.
               </p>
             )}
-            {shipping && paymentNotice && (
-              <p className="text-gold-300 text-xs text-center">
-                O pagamento por aqui ainda está sendo preparado. Em breve você poderá concluir a compra direto nesta tela.
-              </p>
-            )}
+            {paymentError && <p className="text-red-300 text-xs text-center">{paymentError}</p>}
 
             <button
               onClick={clearCart}
